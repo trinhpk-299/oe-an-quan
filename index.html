@@ -259,14 +259,28 @@ label{font-size:12.5px; color:var(--cream-dim); display:block; margin-bottom:6px
   <div class="end-banner" id="end-banner" style="display:none;"></div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 <script>
-/* ===================== STORAGE HELPERS ===================== */
-async function storageGet(key, shared){
-  try{ const res = await window.storage.get(key, shared); if(!res) return null; return JSON.parse(res.value); }
+/* ===================== STORAGE HELPERS (Firebase Realtime Database) ===================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyBJTw-s2bE-PwLHQjsM4eUf2SZEPwbjMm4",
+  authDomain: "oe-an-quan.firebaseapp.com",
+  databaseURL: "https://oe-an-quan-default-rtdb.firebaseio.com",
+  projectId: "oe-an-quan",
+  storageBucket: "oe-an-quan.firebasestorage.app",
+  messagingSenderId: "985267514822",
+  appId: "1:985267514822:web:2eb780fa5d2189803356c7"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+async function storageGet(key){
+  try{ const snap = await db.ref('oe-an-quan/'+key).get(); return snap.exists() ? snap.val() : null; }
   catch(e){ return null; }
 }
-async function storageSet(key, value, shared){
-  try{ await window.storage.set(key, JSON.stringify(value), shared); return true; }
+async function storageSet(key, value){
+  try{ await db.ref('oe-an-quan/'+key).set(value); return true; }
   catch(e){ return false; }
 }
 
