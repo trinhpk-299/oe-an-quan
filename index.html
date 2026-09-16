@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Oe Ăn Quan</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@1,600&display=swap');
+
+:root{
+  --sky-1:#16213f;
+  --sky-2:#2b3b63;
+  --moon:#ffdd8a;
+  --lantern:#e2543a;
+  --lantern-dark:#a8331f;
+  --dirt-1:#8a6b4a;
+  --dirt-2:#5e4630;
+  --dirt-3:#3c2c1c;
+  --dan:#d9c49a;
+  --dan-dark:#a9895a;
+  --quan:#8f97a3;
+  --quan-dark:#565d68;
+  --cream:#f6ecd9;
+  --cream-dim:#cdbfa3;
+  --jade:#4f8f7b;
+  --ink:#241a12;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;height:100%;}
+body{
+  font-family:'Be Vietnam Pro', system-ui, sans-serif;
+  background:linear-gradient(180deg, var(--sky-1), var(--dirt-3) 55%);
+  color:var(--cream);
+  min-height:100vh;
+  display:flex; flex-direction:column; align-items:center;
+  overflow-x:hidden;
+}
+.title-font{font-family:'Playfair Display', 'Be Vietnam Pro', serif; font-style:italic;}
+.screen{width:100%; padding:0; display:none; flex-direction:column; align-items:center; position:relative;}
+.screen.active{display:flex;}
+button{font-family:inherit; cursor:pointer; border:none; border-radius:12px; font-weight:700; font-size:15px; padding:12px 18px; transition:transform .1s, filter .15s;}
+button:active{transform:scale(0.98);}
+button:disabled{opacity:0.45; cursor:not-allowed;}
+.btn-primary{background:linear-gradient(180deg, #ffe6a8, var(--moon)); color:var(--ink);}
+.btn-ghost{background:rgba(0,0,0,0.35); border:1px solid rgba(246,236,217,0.3); color:var(--cream);}
+input[type=text]{
+  width:100%; padding:12px 13px; border-radius:10px; border:1px solid rgba(246,236,217,0.25);
+  background:rgba(12,13,38,0.55); color:var(--cream); font-size:15px; font-family:inherit; outline:none;
+}
+input[type=text]:focus{border-color:var(--moon);}
+label{font-size:12.5px; color:var(--cream-dim); display:block; margin-bottom:6px;}
+
+/* ===== SCENE (dùng chung cho màn vào + sảnh chờ) ===== */
+.scene{
+  position:relative; width:100%; max-width:900px; aspect-ratio:16/9; margin:0 auto;
+  border-radius:0 0 18px 18px; overflow:hidden;
+  background:
+    radial-gradient(circle at 78% 18%, rgba(255,221,138,0.55), transparent 22%),
+    linear-gradient(180deg, #10162c 0%, #1c2947 30%, #3a3324 55%, #4d3c22 100%);
+}
+.scene::before{ /* mái nhà + hiên đơn giản hoá bằng khối màu */
+  content:''; position:absolute; left:0; right:0; bottom:0; height:46%;
+  background:linear-gradient(180deg, #6b4c2e, #4a3319 60%, #3a2712);
+  clip-path:polygon(0 22%, 30% 0, 70% 0, 100% 22%, 100% 100%, 0 100%);
+  opacity:0.92;
+}
+.scene .moon{
+  position:absolute; top:10%; right:9%; width:11%; aspect-ratio:1/1; border-radius:50%;
+  background:radial-gradient(circle at 38% 34%, #fff6d9, var(--moon) 60%, #d8b563 100%);
+  box-shadow:0 0 40px 10px rgba(255,221,138,0.4);
+  animation:glow 4.5s ease-in-out infinite;
+}
+@keyframes glow{0%,100%{box-shadow:0 0 30px 6px rgba(255,221,138,0.32);} 50%{box-shadow:0 0 46px 14px rgba(255,221,138,0.5);}}
+.scene .lantern{
+  position:absolute; width:3.2%; aspect-ratio:1/1.3; border-radius:50% 50% 45% 45%;
+  background:linear-gradient(180deg, var(--lantern), var(--lantern-dark));
+  box-shadow:0 0 10px 2px rgba(226,84,58,0.5);
+}
+.scene .leaf{
+  position:absolute; width:22%; top:-6%; left:2%; opacity:0.85;
+  border-radius:0 100% 0 100%/0 100% 0 100%;
+  background:linear-gradient(135deg, #3c5a34, #24391f);
+  animation:sway 6s ease-in-out infinite;
+  transform-origin:top left;
+}
+@keyframes sway{0%,100%{transform:rotate(-3deg);} 50%{transform:rotate(3deg);}}
+.mat{
+  position:absolute; left:50%; bottom:6%; transform:translateX(-50%);
+  width:46%; aspect-ratio:2.4/1; border-radius:10px;
+  background:repeating-linear-gradient(90deg, #d8c39a, #d8c39a 4px, #c8b088 4px, #c8b088 8px);
+  border:6px solid var(--lantern-dark); box-shadow:0 6px 14px rgba(0,0,0,0.4);
+}
+.speaker-btn{
+  position:absolute; top:4%; right:4%; width:38px; height:38px; border-radius:50%;
+  background:rgba(0,0,0,0.4); border:1px solid rgba(246,236,217,0.3); color:var(--cream);
+  font-size:16px; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:5;
+}
+
+/* ===== JOIN PANEL (đè lên scene) ===== */
+.join-panel{
+  position:absolute; right:4%; top:50%; transform:translateY(-50%);
+  width:340px; max-width:88%; background:rgba(12,13,30,0.82); backdrop-filter:blur(3px);
+  border:1px solid rgba(255,221,138,0.25); border-radius:16px; padding:20px; z-index:4;
+}
+.join-panel h1{font-size:19px; margin:0 0 6px; color:var(--moon);}
+.join-panel p{font-size:12.5px; color:var(--cream-dim); margin:0 0 14px; line-height:1.5;}
+.char-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:10px 0 12px;}
+.char-item{
+  aspect-ratio:1/1; border-radius:12px; border:2px solid transparent; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; font-size:20px;
+  background:var(--swatch, #7a5237); position:relative;
+}
+.char-item.selected{border-color:var(--moon); box-shadow:0 0 0 2px rgba(255,221,138,0.3);}
+.char-item .nm{position:absolute; bottom:-16px; left:0; right:0; font-size:9px; text-align:center; color:var(--cream-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.remember-row{display:flex; align-items:center; gap:7px; font-size:12px; color:var(--cream-dim); margin:14px 0 4px;}
+.error-text{color:#ff9d8a; font-size:12.5px; margin-top:8px; min-height:16px;}
+.title-glow{
+  position:absolute; left:5%; top:8%; font-size:clamp(28px,5vw,46px); color:var(--moon);
+  text-shadow:0 0 12px rgba(255,221,138,0.8), 0 0 26px rgba(226,84,58,0.5); z-index:3;
+}
+
+/* ===== LOBBY ===== */
+.lobby-wrap{width:100%; max-width:900px;}
+.lobby-info{display:flex; justify-content:space-between; align-items:center; width:100%; padding:10px 4px; font-size:13px; color:var(--cream-dim);}
+.avatar{
+  position:absolute; width:8%; aspect-ratio:1/1.5; transform:translate(-50%,-100%);
+  display:flex; flex-direction:column; align-items:center; z-index:6; transition:left .15s linear, top .15s linear;
+}
+.avatar .body{width:100%; height:70%; border-radius:40% 40% 50% 50%; background:var(--swatch,#7a5237); box-shadow:0 3px 6px rgba(0,0,0,0.4);}
+.avatar .name-tag{font-size:9.5px; background:rgba(0,0,0,0.55); padding:2px 6px; border-radius:8px; margin-bottom:2px; white-space:nowrap;}
+.avatar.me .name-tag{background:var(--jade);}
+.avatar .me-arrow{position:absolute; top:-16px; left:50%; transform:translateX(-50%); font-size:14px; color:var(--moon);}
+.avatar .bubble{
+  position:absolute; bottom:calc(100% + 4px); left:50%; transform:translateX(-50%);
+  background:#fff; color:var(--ink); font-size:10px; padding:4px 7px; border-radius:8px; white-space:nowrap;
+  max-width:140px; overflow:hidden; text-overflow:ellipsis;
+}
+.chat-panel{
+  width:100%; max-width:900px; margin-top:10px; background:rgba(12,13,30,0.7); border-radius:14px;
+  border:1px solid rgba(255,221,138,0.18); padding:10px 14px;
+}
+.chat-log{max-height:110px; overflow-y:auto; font-size:12.5px; line-height:1.7; color:var(--cream-dim); margin-bottom:8px;}
+.chat-log b{color:var(--moon); font-weight:700;}
+.chat-input-row{display:flex; gap:8px;}
+.chat-input-row input{flex:1;}
+.lobby-hint{font-size:11.5px; color:var(--cream-dim); text-align:center; margin-top:6px;}
+.share-row{display:flex; gap:8px; width:100%; max-width:900px; margin-top:10px;}
+.share-row input{flex:1;}
+.waiting-note{color:var(--cream-dim); font-size:12.5px; text-align:center; margin-top:6px;}
+
+/* ===== GAME ===== */
+.game-wrap{max-width:640px; padding:16px 14px 40px;}
+.status-bar{
+  background:rgba(0,0,0,0.4); border:1px solid rgba(255,221,138,0.25); border-radius:10px;
+  padding:8px 12px; font-size:12px; color:var(--cream-dim); margin-bottom:10px; min-height:18px;
+}
+.status-bar b{color:var(--moon);}
+.timer-pill{text-align:center; font-size:20px; font-weight:800; color:var(--moon); margin-bottom:6px;}
+.timer-pill.low{color:var(--lantern); animation:tick .6s ease-in-out infinite;}
+@keyframes tick{0%,100%{transform:scale(1);} 50%{transform:scale(1.12);}}
+.board-outer{
+  position:relative; width:100%; aspect-ratio:1/1; margin:8px auto;
+  background:radial-gradient(circle at 50% 45%, var(--dirt-1), var(--dirt-2) 60%, var(--dirt-3) 100%);
+  border-radius:16px; box-shadow:inset 0 0 30px rgba(0,0,0,0.5);
+}
+.seatname{
+  position:absolute; transform:translate(-50%,-50%); font-size:11.5px; padding:4px 10px; border-radius:12px;
+  background:rgba(0,0,0,0.45); color:var(--cream-dim); border:1px solid rgba(255,255,255,0.1); white-space:nowrap;
+}
+.seatname.me{border-color:var(--moon); color:var(--moon);}
+.seatname.turn{background:var(--lantern); color:#fff3e8; border-color:transparent;}
+.cell{
+  position:absolute; width:9.5%; aspect-ratio:1/1; border-radius:50%; transform:translate(-50%,-50%);
+  display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:var(--ink);
+  background:radial-gradient(circle at 35% 30%, #f1e2bd, var(--dan) 60%, var(--dan-dark) 100%);
+  box-shadow:0 3px 5px rgba(0,0,0,0.4); border:2px solid rgba(0,0,0,0.15);
+}
+.cell.quan{
+  width:14%; border-radius:38% 62% 55% 45%/48% 42% 58% 52%;
+  background:radial-gradient(circle at 35% 30%, #b7bec8, var(--quan) 55%, var(--quan-dark) 100%);
+}
+.cell.quan.dead{background:#2a2015; color:#6b5c46; box-shadow:none;}
+.cell.dan.mine.clickable{cursor:pointer; outline:2px solid var(--jade);}
+.cell.dan.mine.clickable:hover{filter:brightness(1.15);}
+.cell.dan.empty{opacity:0.35;}
+.dir-picker{
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:10;
+  background:rgba(12,13,30,0.92); border:1px solid var(--moon); border-radius:12px; padding:10px 12px;
+  display:flex; gap:8px; align-items:center;
+}
+.dir-picker button{font-size:13px; padding:9px 12px;}
+.legend{display:flex; justify-content:center; gap:16px; font-size:11.5px; color:var(--cream-dim); margin-top:8px;}
+.legend span{display:inline-flex; align-items:center; gap:5px;}
+.dot{width:9px; height:9px; border-radius:50%;}
+.dot.jade{background:var(--jade);}
+.dot.quan{background:var(--quan);}
+.scoreboard{display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-top:12px;}
+.score-card{background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:8px 14px; text-align:center; min-width:76px;}
+.score-card.me{border-color:var(--moon);}
+.score-card .n{font-size:18px; font-weight:800; color:var(--moon);}
+.score-card .p{font-size:11px; color:var(--cream-dim); margin-top:2px;}
+.end-banner{margin-top:14px; text-align:center; background:rgba(79,143,123,0.15); border:1px solid var(--jade); border-radius:12px; padding:12px; font-size:14px;}
+.rules-toggle{margin-top:14px; font-size:12.5px; color:var(--moon); background:none; border:none; text-decoration:underline; padding:4px;}
+.rules-box{font-size:12.5px; line-height:1.6; color:var(--cream-dim); text-align:left; background:rgba(0,0,0,0.3); border-radius:10px; padding:14px; margin-top:8px; display:none; max-width:900px;}
+.rules-box.open{display:block;}
+</style>
+</head>
+<body>
+
+<!-- SCREEN 1: JOIN -->
+<div class="screen active" id="screen-join">
+  <div class="scene" id="join-scene">
+    <div class="leaf"></div>
+    <div class="moon"></div>
+    <div class="lantern" style="top:22%; left:8%;"></div>
+    <div class="lantern" style="top:30%; left:14%;"></div>
+    <button class="speaker-btn" id="music-btn" title="Bật/tắt nhạc nền">🔇</button>
+    <div class="title-glow title-font">oe ăn quan</div>
+    <div class="mat"></div>
+  </div>
+  <div class="join-panel">
+    <h1>Vào sân chơi đêm nay</h1>
+    <p>Nhập tên, chọn một nhân vật, rồi vào sảnh chờ cùng mọi người dưới ánh trăng rằm.</p>
+    <label for="name-input">Tên của bạn</label>
+    <input type="text" id="name-input" maxlength="24" placeholder="VD: Daisy">
+    <label style="margin-top:12px;">Chọn nhân vật</label>
+    <div class="char-grid" id="char-grid"></div>
+    <label class="remember-row"><input type="checkbox" id="remember-chk"> Ghi nhớ tên cho lần sau (chỉ trong tab này)</label>
+    <button class="btn-primary" id="join-btn" style="width:100%; margin-top:6px;">Vào chơi ngay</button>
+    <div class="error-text" id="join-error"></div>
+  </div>
+</div>
+
+<!-- SCREEN 2: LOBBY -->
+<div class="screen lobby-wrap" id="screen-lobby">
+  <div class="scene" id="lobby-scene">
+    <div class="leaf"></div>
+    <div class="moon"></div>
+    <div class="lantern" style="top:22%; left:8%;"></div>
+    <div class="lantern" style="top:30%; left:14%;"></div>
+    <div class="title-glow title-font" style="font-size:clamp(18px,3vw,26px); top:5%;">dưới trăng rằm</div>
+    <div id="avatars-layer"></div>
+  </div>
+  <div class="lobby-info">
+    <span id="lobby-count">0 người trong sân</span>
+    <span id="lobby-host-note"></span>
+  </div>
+  <div class="lobby-hint">Di chuyển bằng phím mũi tên. Gõ chat bên dưới rồi Enter để nói chuyện.</div>
+  <div class="chat-panel">
+    <div class="chat-log" id="chat-log"></div>
+    <div class="chat-input-row">
+      <input type="text" id="chat-input" maxlength="140" placeholder="Nhắn gì đó...">
+      <button class="btn-ghost" id="chat-send-btn">Gửi</button>
+    </div>
+  </div>
+  <button class="btn-primary" id="start-btn" style="display:none; margin-top:10px;">Bắt đầu (chia đội tự động)</button>
+  <div class="waiting-note" id="waiting-note">Đang chờ chủ sân bắt đầu...</div>
+  <div class="share-row">
+    <input type="text" id="share-link" readonly>
+    <button class="btn-ghost" id="copy-link-btn">Copy link</button>
+  </div>
+  <div class="waiting-note" id="share-warning" style="display:none;"></div>
+  <button class="rules-toggle" id="rules-toggle-btn">Xem luật chơi Ô Ăn Quan</button>
+  <div class="rules-box" id="rules-box">
+    <b>Bàn chơi:</b> mỗi đội 3 người ngồi 3 góc (dư người thì dùng bàn 2/4 góc). Mỗi cạnh 6 ô dân, mỗi ô 5 hạt (1 điểm/hạt); giữa các cạnh là ô quan (10 điểm/quan).<br><br>
+    <b>Đến lượt:</b> chọn 1 ô dân của mình đang có hạt, rồi chọn hướng rải Trái/Phải.<br><br>
+    <b>Rải tiếp hay dừng:</b> hết hạt trên tay, nhìn sang ô ngay sau ô vừa rơi (theo hướng đã chọn) — ô dân có hạt thì bốc hết rải tiếp; ô quan còn sống thì dừng lượt, không ăn.<br><br>
+    <b>Ăn quân:</b> nếu ô ngay sau đó trống, xét tiếp ô sau nữa — có hạt thì ăn hết; ăn liên hoàn nếu lại gặp đúng kiểu "trống rồi có quân".<br><br>
+    <b>Quan Già:</b> quan chưa đủ 5 hạt dân bên trong thì chưa ai ăn được, tới khi có người ăn quan hợp lệ lần đầu trong ván.<br><br>
+    <b>Bù dân:</b> hết cả 6 ô mà tới lượt thì tự trừ 6 điểm để rải lại mỗi ô 1 hạt; không đủ điểm thì bị loại khỏi bàn.<br><br>
+    <b>Đồng hồ:</b> 20 giây/lượt, hết giờ tự trừ 3 sỏi và mất lượt.<br><br>
+    <b>Hết ván:</b> hết quan hoặc chỉ còn ≤1 người chưa bị loại — mỗi người thu nốt hạt còn lại bên mình, ai điểm cao nhất thắng.
+  </div>
+</div>
+
+<!-- SCREEN 3: GAME -->
+<div class="screen game-wrap" id="screen-game">
+  <div class="status-bar" id="status-bar">Ván đấu bắt đầu.</div>
+  <div class="timer-pill" id="turn-timer"></div>
+  <div class="board-outer" id="board-outer">
+    <div id="cells-layer"></div>
+    <div id="seatnames-layer"></div>
+    <div id="dir-picker-layer"></div>
+  </div>
+  <div class="legend">
+    <span><span class="dot jade"></span> sỏi dân của bạn, có thể bốc</span>
+    <span><span class="dot quan"></span> sỏi quan</span>
+  </div>
+  <div class="scoreboard" id="scoreboard"></div>
+  <div class="end-banner" id="end-banner" style="display:none;"></div>
+</div>
+
+<script>
+/* ===================== STORAGE HELPERS ===================== */
+async function storageGet(key, shared){
+  try{ const res = await window.storage.get(key, shared); if(!res) return null; return JSON.parse(res.value); }
+  catch(e){ return null; }
+}
+async function storageSet(key, value, shared){
+  try{ await window.storage.set(key, JSON.stringify(value), shared); return true; }
+  catch(e){ return false; }
+}
+
+/* ===================== IDENTITY ===================== */
+function uid(){ return 'p_' + Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4); }
+const MY_ID = uid();
+
+/* ===================== NHÂN VẬT (8 nhân vật đặt tên theo dân gian) ===================== */
+const CHARACTERS = [
+  {id:'cuoi', name:'Chú Cuội', color:'#a9895a', emoji:'🌳'},
+  {id:'hangnga', name:'Hằng Nga', color:'#c98fb0', emoji:'🌕'},
+  {id:'ongdia', name:'Ông Địa', color:'#e2b23a', emoji:'😄'},
+  {id:'chute', name:'Chú Tễu', color:'#e2543a', emoji:'🎭'},
+  {id:'cotam', name:'Cô Tấm', color:'#4f8f7b', emoji:'🌸'},
+  {id:'thongoc', name:'Thỏ Ngọc', color:'#cdbfa3', emoji:'🐇'},
+  {id:'ongdo', name:'Ông Đồ', color:'#565d68', emoji:'🖌️'},
+  {id:'belan', name:'Bé Múa Lân', color:'#8f2f2f', emoji:'🦁'}
+];
+let myCharacter = CHARACTERS[0];
+
+/* ===================== GAME ENGINE ===================== */
+const DAN_PER_SIDE = 6;
+const DAN_VALUE = 1;
+const QUAN_VALUE = 10;
+const QUAN_GIA_THRESHOLD = 5;
+const TURN_SECONDS = 20;
+const TIMEOUT_PENALTY = 3;
+
+function generateBoard(teamPlayerIds){
+  const n = teamPlayerIds.length;
+  const cells = [];
+  for(let p=0;p<n;p++){
+    cells.push({type:'quan', stoneAlive:true, seeds:0, alive:true});
+    for(let d=0; d<DAN_PER_SIDE; d++){ cells.push({type:'dan', owner:p, seeds:5, alive:true}); }
+  }
+  return {
+    n, cells, turnSeat:0,
+    scores:new Array(n).fill(0),
+    eliminated:new Array(n).fill(false),
+    firstQuanCaptured:false,
+    turnDeadline: Date.now() + TURN_SECONDS*1000,
+    status:'playing', winners:null, log:['Ván đấu bắt đầu.']
+  };
+}
+function stepIdx(cells, idx, dir){ // dir: +1 (phải) hoặc -1 (trái)
+  const len = cells.length; let i = idx;
+  do{ i = (i + dir + len) % len; }while(!cells[i].alive);
+  return i;
+}
+function isOccupied(cell){ return cell.type==='quan' ? cell.stoneAlive : cell.seeds>0; }
+function doSow(cells, startIdx, dir){
+  let seeds = cells[startIdx].seeds;
+  cells[startIdx].seeds = 0;
+  let idx = startIdx;
+  while(seeds>0){ idx = stepIdx(cells, idx, dir); cells[idx].seeds += 1; seeds--; }
+  return idx;
+}
+function runCaptureChain(cells, emptyGapIdx, board, dir){
+  let total = 0, gap = emptyGapIdx;
+  while(true){
+    const candidate = stepIdx(cells, gap, dir);
+    if(!isOccupied(cells[candidate])) break;
+    if(cells[candidate].type==='quan' && !board.firstQuanCaptured && cells[candidate].seeds < QUAN_GIA_THRESHOLD) break;
+    if(cells[candidate].type==='quan'){
+      total += cells[candidate].seeds*DAN_VALUE + QUAN_VALUE;
+      cells[candidate].stoneAlive = false; cells[candidate].alive = false;
+      board.firstQuanCaptured = true;
+    } else { total += cells[candidate].seeds*DAN_VALUE; }
+    cells[candidate].seeds = 0;
+    const nextGap = stepIdx(cells, candidate, dir);
+    if(!isOccupied(cells[nextGap])){ gap = nextGap; } else { break; }
+  }
+  return total;
+}
+function tryRelayAndCapture(cells, landingIdx, board, dir){
+  let L = landingIdx, guard=0;
+  while(true){
+    guard++; if(guard>3000) break;
+    const next1 = stepIdx(cells, L, dir);
+    if(cells[next1].type==='dan' && cells[next1].seeds>0){ L = doSow(cells, next1, dir); continue; }
+    if(cells[next1].type==='quan' && isOccupied(cells[next1])) return 0;
+    return runCaptureChain(cells, next1, board, dir);
+  }
+  return 0;
+}
+function hasSeeds(board, seat){ return board.cells.some(c=>c.type==='dan' && c.owner===seat && c.seeds>0); }
+function activeSeats(board){ const a=[]; for(let i=0;i<board.n;i++) if(!board.eliminated[i]) a.push(i); return a; }
+function allQuanDead(board){ return board.cells.every(c=> c.type!=='quan' || !c.stoneAlive); }
+function refillOrEliminate(board, seat){
+  if(board.scores[seat] >= DAN_PER_SIDE){
+    board.scores[seat] -= DAN_PER_SIDE;
+    board.cells.forEach(c=>{ if(c.type==='dan' && c.owner===seat) c.seeds = 1; });
+    board.log.unshift(`Người chơi ghế ${seat+1} bù dân (-${DAN_PER_SIDE} điểm).`);
+    return true;
+  }
+  board.eliminated[seat] = true;
+  board.log.unshift(`Người chơi ghế ${seat+1} bị loại khỏi bàn.`);
+  return false;
+}
+function advanceTurn(board){
+  const active = activeSeats(board);
+  if(active.length<=1) return;
+  let next = board.turnSeat;
+  for(let step=0; step<board.n; step++){
+    next = (next+1) % board.n;
+    if(board.eliminated[next]) continue;
+    if(!hasSeeds(board, next)){ const ok = refillOrEliminate(board, next); if(!ok) continue; }
+    board.turnSeat = next; return;
+  }
+}
+function checkEnd(board){
+  const active = activeSeats(board);
+  if(allQuanDead(board) || active.length<=1){
+    board.cells.forEach(c=>{ if(c.type==='dan' && c.seeds>0){ board.scores[c.owner]+=c.seeds*DAN_VALUE; c.seeds=0; } });
+    board.status='ended';
+    const max = Math.max(...board.scores);
+    board.winners = board.scores.map((s,i)=> s===max? i:-1).filter(i=>i>=0);
+    board.log.unshift('Hết ván.');
+  }
+}
+function applyMove(board, cellIdx, actingSeat, dir){
+  const cell = board.cells[cellIdx];
+  if(board.status!=='playing') return false;
+  if(board.turnSeat!==actingSeat) return false;
+  if(board.eliminated[actingSeat]) return false;
+  if(!(cell.type==='dan' && cell.owner===actingSeat && cell.seeds>0)) return false;
+  const landing = doSow(board.cells, cellIdx, dir);
+  const captured = tryRelayAndCapture(board.cells, landing, board, dir);
+  board.scores[actingSeat] += captured;
+  board.log.unshift(captured>0 ? `Ghế ${actingSeat+1} rải ${dir>0?'phải':'trái'}, ăn ${captured} điểm.` : `Ghế ${actingSeat+1} rải ${dir>0?'phải':'trái'}, không ăn.`);
+  if(board.log.length>6) board.log.length=6;
+  advanceTurn(board);
+  checkEnd(board);
+  if(board.status==='playing'){ board.turnDeadline = Date.now() + TURN_SECONDS*1000; }
+  return true;
+}
+
+/* ===================== TEAM FORMATION ===================== */
+function formTeams(players){
+  const shuffled = [...players].sort(()=>Math.random()-0.5);
+  const teams = []; let i=0;
+  while(i<shuffled.length){
+    const remaining = shuffled.length - i;
+    if(remaining===4){ teams.push(shuffled.slice(i,i+4)); i+=4; }
+    else if(remaining===2){ teams.push(shuffled.slice(i,i+2)); i+=2; }
+    else if(remaining>=3){ teams.push(shuffled.slice(i,i+3)); i+=3; }
+    else{ if(teams.length>0) teams[teams.length-1].push(shuffled[i]); else teams.push(shuffled.slice(i,i+1)); i+=1; }
+  }
+  return teams;
+}
+
+/* ===================== APP STATE ===================== */
+let myTeamIndex=-1, myTeamIds=[], myTeamNames=[], myBoard=null, room=null;
+let lobbyPollTimer=null, gamePollTimer=null, posPollTimer=null, chatPollTimer=null;
+let myPos = {x:50, y:70};
+let lastChatCount = 0;
+let pendingCellIdx = null;
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* ---- render character grid ---- */
+const charGrid = document.getElementById('char-grid');
+CHARACTERS.forEach((c,i)=>{
+  const el = document.createElement('div');
+  el.className = 'char-item' + (i===0?' selected':'');
+  el.style.setProperty('--swatch', c.color);
+  el.innerHTML = `${c.emoji}<span class="nm">${c.name}</span>`;
+  el.addEventListener('click', ()=>{
+    document.querySelectorAll('.char-item').forEach(x=>x.classList.remove('selected'));
+    el.classList.add('selected');
+    myCharacter = c;
+  });
+  charGrid.appendChild(el);
+});
+
+document.getElementById('music-btn').addEventListener('click', (e)=>{
+  const btn = e.currentTarget;
+  const on = btn.textContent === '🔇';
+  btn.textContent = on ? '🔊' : '🔇';
+  // Ghi chú: chưa gắn file nhạc thật, đây là nút bật/tắt placeholder cho bản sườn.
+});
+
+/* ---- JOIN ---- */
+function updateShareLinkUI(){
+  const href = window.location.href;
+  const isRealUrl = /^https?:\/\//i.test(href);
+  const row = document.querySelector('.share-row');
+  const warn = document.getElementById('share-warning');
+  if(isRealUrl){
+    document.getElementById('share-link').value = href;
+    row.style.display = 'flex'; warn.style.display = 'none';
+  }else{
+    row.style.display = 'none'; warn.style.display = 'block';
+    warn.textContent = 'Bản xem trong khung chat chưa có link chia sẻ được — bấm Share/Publish của Claude trên khung xem file này để lấy link công khai.';
+  }
+}
+document.getElementById('join-btn').addEventListener('click', async ()=>{
+  const name = document.getElementById('name-input').value.trim();
+  const errEl = document.getElementById('join-error');
+  if(!name){ errEl.textContent = 'Nhập tên trước đã nhé.'; return; }
+  errEl.textContent = '';
+  let r = await storageGet('room', true);
+  if(!r){ r = { phase:'lobby', players:[], teams:[], createdAt: Date.now() }; }
+  if(!r.players.some(p=>p.id===MY_ID)){ r.players.push({id:MY_ID, name, character:myCharacter.id}); }
+  await storageSet('room', r, true);
+  myPos = {x: 20 + Math.random()*60, y: 55 + Math.random()*25};
+  const positions = (await storageGet('positions', true)) || {};
+  positions[MY_ID] = {x:myPos.x, y:myPos.y, name, character:myCharacter.id};
+  await storageSet('positions', positions, true);
+  updateShareLinkUI();
+  showScreen('screen-lobby');
+  startLobbyPolling();
+});
+document.getElementById('copy-link-btn').addEventListener('click', async ()=>{
+  const val = document.getElementById('share-link').value;
+  try{ await navigator.clipboard.writeText(val); const btn=document.getElementById('copy-link-btn'); const old=btn.textContent; btn.textContent='Đã copy!'; setTimeout(()=>btn.textContent=old,1400); }
+  catch(e){ document.getElementById('share-link').select(); }
+});
+document.getElementById('rules-toggle-btn').addEventListener('click', ()=>{
+  document.getElementById('rules-box').classList.toggle('open');
+});
+
+/* ---- LOBBY: avatar render + movement ---- */
+function charById(id){ return CHARACTERS.find(c=>c.id===id) || CHARACTERS[0]; }
+function renderAvatars(positions){
+  const layer = document.getElementById('avatars-layer');
+  layer.innerHTML = '';
+  Object.entries(positions).forEach(([pid, p])=>{
+    const isMe = pid===MY_ID;
+    const el = document.createElement('div');
+    el.className = 'avatar' + (isMe?' me':'');
+    el.style.left = p.x+'%'; el.style.top = p.y+'%';
+    const ch = charById(p.character);
+    el.style.setProperty('--swatch', ch.color);
+    el.innerHTML = `<div class="name-tag">${p.name||''}</div><div class="body" style="display:flex;align-items:center;justify-content:center;font-size:16px;">${ch.emoji}</div>${isMe?'<div class="me-arrow">▼</div>':''}<div class="bubble" style="display:none;"></div>`;
+    layer.appendChild(el);
+  });
+}
+let keysHeld = {};
+window.addEventListener('keydown', (e)=>{
+  if(!document.getElementById('screen-lobby').classList.contains('active')) return;
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){ keysHeld[e.key]=true; e.preventDefault(); }
+});
+window.addEventListener('keyup', (e)=>{ keysHeld[e.key]=false; });
+let lastPosWrite = 0;
+async function movementTick(){
+  if(!document.getElementById('screen-lobby').classList.contains('active')) return;
+  let moved=false;
+  const step=1.6;
+  if(keysHeld['ArrowUp']){ myPos.y=Math.max(12,myPos.y-step); moved=true; }
+  if(keysHeld['ArrowDown']){ myPos.y=Math.min(92,myPos.y+step); moved=true; }
+  if(keysHeld['ArrowLeft']){ myPos.x=Math.max(4,myPos.x-step); moved=true; }
+  if(keysHeld['ArrowRight']){ myPos.x=Math.min(96,myPos.x+step); moved=true; }
+  if(moved){
+    const el = document.querySelector('.avatar.me');
+    if(el){ el.style.left = myPos.x+'%'; el.style.top = myPos.y+'%'; }
+    const now = Date.now();
+    if(now - lastPosWrite > 180){
+      lastPosWrite = now;
+      const positions = (await storageGet('positions', true)) || {};
+      positions[MY_ID] = {x:myPos.x, y:myPos.y, name: positions[MY_ID]?.name || myCharacter.name, character: myCharacter.id};
+      await storageSet('positions', positions, true);
+    }
+  }
+}
+setInterval(movementTick, 60);
+
+/* ---- LOBBY: chat ---- */
+function renderChat(chat){
+  const log = document.getElementById('chat-log');
+  log.innerHTML = chat.map(m=>`<div><b>${m.name}:</b> ${m.text}</div>`).join('');
+  log.scrollTop = log.scrollHeight;
+  if(chat.length > lastChatCount){
+    const newest = chat[chat.length-1];
+    if(newest){
+      const bubbleTarget = document.querySelectorAll('.avatar').length ? [...document.querySelectorAll('.avatar')] : [];
+      // gắn bubble vào đúng avatar nếu tìm thấy theo tên hiển thị gần nhất (đơn giản hoá: hiện ở tất cả không khớp id trực tiếp được vì layer render lại theo positions)
+    }
+  }
+  lastChatCount = chat.length;
+}
+document.getElementById('chat-send-btn').addEventListener('click', sendChat);
+document.getElementById('chat-input').addEventListener('keydown', (e)=>{ if(e.key==='Enter') sendChat(); });
+async function sendChat(){
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if(!text) return;
+  input.value = '';
+  const chat = (await storageGet('chat', true)) || [];
+  const positions = (await storageGet('positions', true)) || {};
+  const myName = positions[MY_ID]?.name || myCharacter.name;
+  chat.push({id:MY_ID, name:myName, text, ts:Date.now()});
+  if(chat.length>40) chat.splice(0, chat.length-40);
+  await storageSet('chat', chat, true);
+  showBubbleOverMe(text);
+}
+function showBubbleOverMe(text){
+  const el = document.querySelector('.avatar.me .bubble');
+  if(!el) return;
+  el.textContent = text; el.style.display='block';
+  setTimeout(()=>{ el.style.display='none'; }, 4000);
+}
+
+/* ---- LOBBY: team start ---- */
+function renderLobby(r){
+  document.getElementById('lobby-count').textContent = `${r.players.length} người trong sân`;
+  const isHost = r.players.length>0 && r.players[0].id===MY_ID;
+  const startBtn = document.getElementById('start-btn');
+  const waitNote = document.getElementById('waiting-note');
+  if(isHost){
+    startBtn.style.display='block'; waitNote.style.display='none';
+    startBtn.disabled = r.players.length < 2;
+    startBtn.textContent = r.players.length < 2 ? 'Cần ít nhất 2 người để bắt đầu' : 'Bắt đầu (chia đội tự động)';
+  }else{ startBtn.style.display='none'; waitNote.style.display='block'; }
+}
+document.getElementById('start-btn').addEventListener('click', async ()=>{
+  let r = await storageGet('room', true);
+  if(!r || r.players.length<2) return;
+  const teams = formTeams(r.players);
+  r.teams = teams.map(t=>t.map(p=>p.id));
+  r.phase = 'playing';
+  await storageSet('room', r, true);
+  for(let i=0;i<teams.length;i++){ await storageSet('board-team-'+i, generateBoard(teams[i]), true); }
+});
+async function lobbyTick(){
+  const r = await storageGet('room', true);
+  if(r){ room = r; if(r.phase==='playing'){ stopLobbyPolling(); enterGame(r); return; } renderLobby(r); }
+  const positions = await storageGet('positions', true);
+  if(positions) renderAvatars(positions);
+  const chat = await storageGet('chat', true);
+  if(chat) renderChat(chat);
+}
+function startLobbyPolling(){ stopLobbyPolling(); lobbyTick(); lobbyPollTimer=setInterval(lobbyTick, 1200); }
+function stopLobbyPolling(){ if(lobbyPollTimer){ clearInterval(lobbyPollTimer); lobbyPollTimer=null; } }
+
+/* ---- GAME ---- */
+function findMyTeam(r){ for(let i=0;i<r.teams.length;i++) if(r.teams[i].includes(MY_ID)) return i; return -1; }
+function enterGame(r){
+  myTeamIndex = findMyTeam(r);
+  if(myTeamIndex===-1){
+    document.getElementById('status-bar').textContent = 'Bạn vào sau khi ván đã bắt đầu, chưa có bàn — chờ ván sau nhé.';
+    showScreen('screen-game'); return;
+  }
+  myTeamIds = r.teams[myTeamIndex];
+  myTeamNames = myTeamIds.map(id => (r.players.find(p=>p.id===id)||{}).name || '???');
+  showScreen('screen-game');
+  gameTick();
+  gamePollTimer = setInterval(gameTick, 1300);
+}
+
+function rotAngle(idx, total, mySeat, n){
+  const perSeat = total/n;
+  const raw = (idx/total)*360 - 90;
+  const myCenterRaw = ((mySeat*perSeat + perSeat/2)/total)*360 - 90;
+  const offset = 90 - myCenterRaw; // đặt ghế của mình cố định ở phía dưới (gần người xem)
+  return raw + offset;
+}
+function renderBoard(board){
+  const total = board.cells.length;
+  const mySeat = myTeamIds.indexOf(MY_ID);
+  const R = 40;
+  const layer = document.getElementById('cells-layer');
+  const seatLayer = document.getElementById('seatnames-layer');
+  layer.innerHTML=''; seatLayer.innerHTML='';
+  board.cells.forEach((cell, idx)=>{
+    const angle = rotAngle(idx, total, mySeat, board.n) * Math.PI/180;
+    const x = 50 + R*Math.cos(angle), y = 50 + R*Math.sin(angle);
+    const div = document.createElement('div');
+    let cls = 'cell ' + cell.type;
+    const mine = cell.type==='dan' && cell.owner===mySeat;
+    const clickable = mine && board.status==='playing' && board.turnSeat===mySeat && !board.eliminated[mySeat] && cell.seeds>0;
+    if(mine) cls+=' mine'; if(clickable) cls+=' clickable';
+    if(cell.type==='dan' && cell.seeds===0) cls+=' empty';
+    if(cell.type==='quan' && !cell.stoneAlive) cls+=' dead';
+    div.className = cls; div.style.left=x+'%'; div.style.top=y+'%';
+    div.textContent = cell.type==='quan' ? (cell.stoneAlive ? (cell.seeds>0?('Q·'+cell.seeds):'Q') : '·') : cell.seeds;
+    if(clickable) div.addEventListener('click', ()=>openDirPicker(idx));
+    layer.appendChild(div);
+  });
+  const perSeat = total/board.n;
+  for(let s=0;s<board.n;s++){
+    const centerIdx = s*perSeat + perSeat/2;
+    const angle = rotAngle(centerIdx, total, mySeat, board.n) * Math.PI/180;
+    const x = 50 + (R+9)*Math.cos(angle), y = 50 + (R+9)*Math.sin(angle);
+    const el = document.createElement('div');
+    let c='seatname'; if(s===mySeat) c+=' me'; if(board.turnSeat===s && board.status==='playing' && !board.eliminated[s]) c+=' turn';
+    el.className=c; el.style.left=x+'%'; el.style.top=y+'%';
+    let label = myTeamNames[s] + (s===mySeat?' (bạn)':'');
+    if(board.eliminated[s]) label += ' · đã loại';
+    el.textContent = label;
+    seatLayer.appendChild(el);
+  }
+  const statusBar = document.getElementById('status-bar');
+  statusBar.innerHTML = board.status==='playing'
+    ? (board.eliminated[mySeat] ? 'Bạn đã bị loại khỏi bàn này.' : (board.turnSeat===mySeat ? '<b>Đến lượt bạn</b> — chọn 1 sỏi dân của bạn.' : `Đang chờ <b>${myTeamNames[board.turnSeat]}</b> đi...`))
+    : 'Ván đã kết thúc.';
+  if(board.log && board.log[0]) statusBar.innerHTML += `<br><span style="opacity:0.7;">${board.log[0]}</span>`;
+
+  const score = document.getElementById('scoreboard');
+  score.innerHTML = board.scores.map((s,i)=>`<div class="score-card${i===mySeat?' me':''}"><div class="n">${s}</div><div class="p">${myTeamNames[i]||''}</div></div>`).join('');
+
+  const endBanner = document.getElementById('end-banner');
+  if(board.status==='ended'){
+    endBanner.style.display='block';
+    endBanner.textContent = (board.winners.length>1?'Hoà giữa: ':'Thắng bàn này: ') + board.winners.map(i=>myTeamNames[i]).join(', ');
+  } else { endBanner.style.display='none'; }
+}
+function openDirPicker(idx){
+  pendingCellIdx = idx;
+  const picker = document.getElementById('dir-picker-layer');
+  picker.innerHTML = `<div class="dir-picker">
+    <button class="btn-ghost" id="dir-left">◀ Trái</button>
+    <button class="btn-primary" id="dir-right">Phải ▶</button>
+  </div>`;
+  document.getElementById('dir-left').addEventListener('click', ()=>confirmDir(-1));
+  document.getElementById('dir-right').addEventListener('click', ()=>confirmDir(1));
+}
+function closeDirPicker(){ document.getElementById('dir-picker-layer').innerHTML=''; pendingCellIdx=null; }
+let clickLock=false;
+async function confirmDir(dir){
+  if(pendingCellIdx===null || clickLock) return;
+  const idx = pendingCellIdx; closeDirPicker();
+  clickLock = true;
+  try{
+    const board = await storageGet('board-team-'+myTeamIndex, true);
+    if(!board){ clickLock=false; return; }
+    const mySeat = myTeamIds.indexOf(MY_ID);
+    const ok = applyMove(board, idx, mySeat, dir);
+    if(ok){ await storageSet('board-team-'+myTeamIndex, board, true); myBoard=board; renderBoard(board); }
+  } finally { clickLock=false; }
+}
+
+let timeoutLock=false;
+async function maybeHandleTimeout(board){
+  if(!board || board.status!=='playing' || !board.turnDeadline) return;
+  const mySeat = myTeamIds.indexOf(MY_ID);
+  const overBy = Date.now() - board.turnDeadline;
+  if(overBy<0) return;
+  const isMyTurn = board.turnSeat===mySeat && !board.eliminated[mySeat];
+  if(!isMyTurn && overBy<2500) return;
+  if(timeoutLock) return; timeoutLock=true;
+  try{
+    const fresh = await storageGet('board-team-'+myTeamIndex, true);
+    if(!fresh || fresh.status!=='playing') return;
+    if(fresh.turnDeadline !== board.turnDeadline) return;
+    const seat = fresh.turnSeat;
+    fresh.scores[seat] = Math.max(0, fresh.scores[seat]-TIMEOUT_PENALTY);
+    fresh.log.unshift(`Ghế ${seat+1} hết giờ, trừ ${TIMEOUT_PENALTY} sỏi.`);
+    if(fresh.log.length>6) fresh.log.length=6;
+    advanceTurn(fresh); checkEnd(fresh);
+    if(fresh.status==='playing'){ fresh.turnDeadline = Date.now()+TURN_SECONDS*1000; }
+    await storageSet('board-team-'+myTeamIndex, fresh, true);
+    myBoard=fresh; renderBoard(fresh);
+  } finally { timeoutLock=false; }
+}
+async function gameTick(){
+  const board = await storageGet('board-team-'+myTeamIndex, true);
+  if(board){ myBoard=board; renderBoard(board); await maybeHandleTimeout(board); }
+}
+setInterval(()=>{
+  const el = document.getElementById('turn-timer');
+  if(!el) return;
+  if(!myBoard || myBoard.status!=='playing' || !myBoard.turnDeadline){ el.textContent=''; return; }
+  const remain = Math.max(0, Math.ceil((myBoard.turnDeadline-Date.now())/1000));
+  el.textContent = remain+'s'; el.classList.toggle('low', remain<=5);
+}, 300);
+</script>
+</body>
+</html>
