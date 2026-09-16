@@ -300,6 +300,7 @@ const CHARACTERS = [
   {id:'mualaan',     name:'Bé Múa Lân',      color:'#c9432f', img:'assets/chars/mualaan.jpg'}
 ];
 let myCharacter = CHARACTERS[0];
+let myName = '';
 
 /* ===================== GAME ENGINE ===================== */
 const DAN_PER_SIDE = 6;
@@ -486,14 +487,15 @@ document.getElementById('join-btn').addEventListener('click', async ()=>{
   const errEl = document.getElementById('join-error');
   if(!name){ errEl.textContent = 'Nhập tên trước đã nhé.'; return; }
   errEl.textContent = '';
-  let r = await storageGet('room', true);
-  if(!r){ r = { phase:'lobby', players:[], teams:[], createdAt: Date.now() }; }
-  if(!r.players.some(p=>p.id===MY_ID)){ r.players.push({id:MY_ID, name, character:myCharacter.id}); }
-  await storageSet('room', r, true);
+  myName = name;
+  // Ghi trực tiếp vào nhánh riêng của mình (players/{id}, positions/{id}) thay vì đọc-sửa-ghi
+  // đè cả object dùng chung — tránh mất người chơi khi nhiều người join cùng lúc.
+  await storageSet('players/'+MY_ID, {id:MY_ID, name, character:myCharacter.id, joinedAt: Date.now()});
+  // Xác định host bằng transaction nguyên tử: người đầu tiên "chạm" vào hostId sẽ là host,
+  // dù có nhiều người join trong cùng một khoảnh khắc.
+  await db.ref('oe-an-quan/room/hostId').transaction(cur => cur===null ? MY_ID : cur);
   myPos = {x: 20 + Math.random()*60, y: 55 + Math.random()*25};
-  const positions = (await storageGet('positions', true)) || {};
-  positions[MY_ID] = {x:myPos.x, y:myPos.y, name, character:myCharacter.id};
-  await storageSet('positions', positions, true);
+  await storageSet('positions/'+MY_ID, {x:myPos.x, y:myPos.y, name, character:myCharacter.id});
   updateShareLinkUI();
   showScreen('screen-lobby');
   startLobbyPolling();
@@ -544,9 +546,8 @@ async function movementTick(){
     const now = Date.now();
     if(now - lastPosWrite > 180){
       lastPosWrite = now;
-      const positions = (await storageGet('positions', true)) || {};
-      positions[MY_ID] = {x:myPos.x, y:myPos.y, name: positions[MY_ID]?.name || myCharacter.name, character: myCharacter.id};
-      await storageSet('positions', positions, true);
+      // Ghi thẳng vào positions/{id} của mình — không đọc/ghi đè vị trí của người khác.
+      await storageSet('positions/'+MY_ID, {x:myPos.x, y:myPos.y, name:myName||myCharacter.name, character:myCharacter.id});
     }
   }
 }
@@ -573,12 +574,9 @@ async function sendChat(){
   const text = input.value.trim();
   if(!text) return;
   input.value = '';
-  const chat = (await storageGet('chat', true)) || [];
-  const positions = (await storageGet('positions', true)) || {};
-  const myName = positions[MY_ID]?.name || myCharacter.name;
-  chat.push({id:MY_ID, name:myName, text, ts:Date.now()});
-  if(chat.length>40) chat.splice(0, chat.length-40);
-  await storageSet('chat', chat, true);
+  // Mỗi tin nhắn ghi vào một key riêng (push) thay vì đọc-sửa-ghi đè cả mảng chat dùng chung.
+  const msgKey = db.ref('oe-an-quan/chat').push().key;
+  await storageSet('chat/'+msgKey, {id:MY_ID, name:myName||myCharacter.name, text, ts:Date.now()});
   showBubbleOverMe(text);
 }
 function showBubbleOverMe(text){
@@ -589,9 +587,13 @@ function showBubbleOverMe(text){
 }
 
 /* ---- LOBBY: team start ---- */
-function renderLobby(r){
+async function getPlayers(){
+  const obj = await storageGet('players') || {};
+  return Object.values(obj).sort((a,b)=>a.joinedAt-b.joinedAt);
+}
+function renderLobby(r, hostId){
   document.getElementById('lobby-count').textContent = `${r.players.length} người trong sân`;
-  const isHost = r.players.length>0 && r.players[0].id===MY_ID;
+  const isHost = hostId===MY_ID;
   const startBtn = document.getElementById('start-btn');
   const waitNote = document.getElementById('waiting-note');
   if(isHost){
@@ -601,21 +603,23 @@ function renderLobby(r){
   }else{ startBtn.style.display='none'; waitNote.style.display='block'; }
 }
 document.getElementById('start-btn').addEventListener('click', async ()=>{
-  let r = await storageGet('room', true);
-  if(!r || r.players.length<2) return;
-  const teams = formTeams(r.players);
-  r.teams = teams.map(t=>t.map(p=>p.id));
-  r.phase = 'playing';
-  await storageSet('room', r, true);
-  for(let i=0;i<teams.length;i++){ await storageSet('board-team-'+i, generateBoard(teams[i]), true); }
+  const players = await getPlayers();
+  if(players.length<2) return;
+  const teams = formTeams(players);
+  const teamIds = teams.map(t=>t.map(p=>p.id));
+  await storageSet('room', {phase:'playing', teams:teamIds, hostId:MY_ID, createdAt: Date.now()});
+  for(let i=0;i<teams.length;i++){ await storageSet('board-team-'+i, generateBoard(teams[i])); }
 });
 async function lobbyTick(){
-  const r = await storageGet('room', true);
-  if(r){ room = r; if(r.phase==='playing'){ stopLobbyPolling(); enterGame(r); return; } renderLobby(r); }
-  const positions = await storageGet('positions', true);
+  const meta = await storageGet('room');
+  const players = await getPlayers();
+  room = { phase: meta?.phase || 'lobby', teams: meta?.teams || [], players };
+  if(room.phase==='playing'){ stopLobbyPolling(); enterGame(room); return; }
+  renderLobby(room, meta?.hostId);
+  const positions = await storageGet('positions');
   if(positions) renderAvatars(positions);
-  const chat = await storageGet('chat', true);
-  if(chat) renderChat(chat);
+  const chatObj = await storageGet('chat');
+  if(chatObj) renderChat(Object.values(chatObj).sort((a,b)=>a.ts-b.ts));
 }
 function startLobbyPolling(){ stopLobbyPolling(); lobbyTick(); lobbyPollTimer=setInterval(lobbyTick, 1200); }
 function stopLobbyPolling(){ if(lobbyPollTimer){ clearInterval(lobbyPollTimer); lobbyPollTimer=null; } }
