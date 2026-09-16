@@ -100,9 +100,13 @@ label{font-size:12.5px; color:var(--cream-dim); display:block; margin-bottom:6px
   display:flex; flex-direction:column; align-items:center; z-index:6; transition:left .15s linear, top .15s linear;
 }
 .avatar .body{
-  width:100%; height:88%; border-radius:22% 22% 10% 10%/14% 14% 8% 8%;
-  background-color:var(--swatch,#7a5237); background-size:cover; background-position:top center;
-  box-shadow:0 3px 8px rgba(0,0,0,0.5); border:2px solid rgba(255,255,255,0.18);
+  width:100%; height:88%; object-fit:contain; object-position:bottom center;
+  filter:drop-shadow(0 6px 5px rgba(0,0,0,0.45));
+}
+.avatar .shadow{
+  position:absolute; bottom:2%; left:50%; transform:translateX(-50%);
+  width:55%; height:8%; border-radius:50%;
+  background:radial-gradient(closest-side, rgba(0,0,0,0.4), rgba(0,0,0,0) 75%);
 }
 .avatar .name-tag{font-size:9.5px; background:rgba(0,0,0,0.55); padding:2px 6px; border-radius:8px; margin-bottom:2px; white-space:nowrap;}
 .avatar.me .name-tag{background:var(--jade);}
@@ -290,14 +294,14 @@ const MY_ID = uid();
 
 /* ===================== NHÂN VẬT (8 bé hoá trang đêm Trung Thu, theo tranh minh hoạ) ===================== */
 const CHARACTERS = [
-  {id:'densao',     name:'Bé Đèn Ông Sao', color:'#e2b23a', img:'assets/chars/densao.jpg'},
-  {id:'hoasen',      name:'Bé Hoa Sen',      color:'#c98fb0', img:'assets/chars/hoasen.jpg'},
-  {id:'phaco',       name:'Bé Phá Cỗ',       color:'#7a9a5a', img:'assets/chars/phaco.jpg'},
-  {id:'thongoc',     name:'Thỏ Ngọc',        color:'#9d8fc9', img:'assets/chars/thongoc.jpg'},
-  {id:'trongcom',    name:'Bé Trống Cơm',    color:'#3d5a80', img:'assets/chars/trongcom.jpg'},
-  {id:'chongchong',  name:'Chú Cuội',        color:'#4f6b3a', img:'assets/chars/chongchong.jpg'},
-  {id:'ongdo',       name:'Ông Đồ',          color:'#7a5237', img:'assets/chars/ongdo.jpg'},
-  {id:'mualaan',     name:'Bé Múa Lân',      color:'#c9432f', img:'assets/chars/mualaan.jpg'}
+  {id:'densao',     name:'Bé Đèn Ông Sao', color:'#e2b23a', img:'assets/chars/densao.png'},
+  {id:'hoasen',      name:'Bé Hoa Sen',      color:'#c98fb0', img:'assets/chars/hoasen.png'},
+  {id:'phaco',       name:'Bé Phá Cỗ',       color:'#7a9a5a', img:'assets/chars/phaco.png'},
+  {id:'thongoc',     name:'Thỏ Ngọc',        color:'#9d8fc9', img:'assets/chars/thongoc.png'},
+  {id:'trongcom',    name:'Bé Trống Cơm',    color:'#3d5a80', img:'assets/chars/trongcom.png'},
+  {id:'chongchong',  name:'Chú Cuội',        color:'#4f6b3a', img:'assets/chars/chongchong.png'},
+  {id:'ongdo',       name:'Ông Đồ',          color:'#7a5237', img:'assets/chars/ongdo.png'},
+  {id:'mualaan',     name:'Bé Múa Lân',      color:'#c9432f', img:'assets/chars/mualaan.png'}
 ];
 let myCharacter = CHARACTERS[0];
 let myName = '';
@@ -521,7 +525,7 @@ function renderAvatars(positions){
     el.style.left = p.x+'%'; el.style.top = p.y+'%';
     const ch = charById(p.character);
     el.style.setProperty('--swatch', ch.color);
-    el.innerHTML = `<div class="name-tag">${p.name||''}</div><div class="body" style="background-image:url('${ch.img}');"></div>${isMe?'<div class="me-arrow">▼</div>':''}<div class="bubble" style="display:none;"></div>`;
+    el.innerHTML = `<div class="name-tag">${p.name||''}</div><div class="shadow"></div><img class="body" src="${ch.img}" draggable="false">${isMe?'<div class="me-arrow">▼</div>':''}<div class="bubble" style="display:none;"></div>`;
     layer.appendChild(el);
   });
 }
