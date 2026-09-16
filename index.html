@@ -49,46 +49,17 @@ input[type=text]{
 input[type=text]:focus{border-color:var(--moon);}
 label{font-size:12.5px; color:var(--cream-dim); display:block; margin-bottom:6px;}
 
-/* ===== SCENE (dùng chung cho màn vào + sảnh chờ) ===== */
+/* ===== SCENE (dùng chung cho màn vào + sảnh chờ) — ảnh nền thật theo bản thiết kế Canva ===== */
 .scene{
   position:relative; width:100%; max-width:900px; aspect-ratio:16/9; margin:0 auto;
   border-radius:0 0 18px 18px; overflow:hidden;
-  background:
-    radial-gradient(circle at 78% 18%, rgba(255,221,138,0.55), transparent 22%),
-    linear-gradient(180deg, #10162c 0%, #1c2947 30%, #3a3324 55%, #4d3c22 100%);
+  background-size:cover; background-position:center; background-repeat:no-repeat;
+  background-color:#10162c;
+  box-shadow:inset 0 -40px 60px -20px rgba(0,0,0,0.55);
 }
-.scene::before{ /* mái nhà + hiên đơn giản hoá bằng khối màu */
-  content:''; position:absolute; left:0; right:0; bottom:0; height:46%;
-  background:linear-gradient(180deg, #6b4c2e, #4a3319 60%, #3a2712);
-  clip-path:polygon(0 22%, 30% 0, 70% 0, 100% 22%, 100% 100%, 0 100%);
-  opacity:0.92;
-}
-.scene .moon{
-  position:absolute; top:10%; right:9%; width:11%; aspect-ratio:1/1; border-radius:50%;
-  background:radial-gradient(circle at 38% 34%, #fff6d9, var(--moon) 60%, #d8b563 100%);
-  box-shadow:0 0 40px 10px rgba(255,221,138,0.4);
-  animation:glow 4.5s ease-in-out infinite;
-}
-@keyframes glow{0%,100%{box-shadow:0 0 30px 6px rgba(255,221,138,0.32);} 50%{box-shadow:0 0 46px 14px rgba(255,221,138,0.5);}}
-.scene .lantern{
-  position:absolute; width:3.2%; aspect-ratio:1/1.3; border-radius:50% 50% 45% 45%;
-  background:linear-gradient(180deg, var(--lantern), var(--lantern-dark));
-  box-shadow:0 0 10px 2px rgba(226,84,58,0.5);
-}
-.scene .leaf{
-  position:absolute; width:22%; top:-6%; left:2%; opacity:0.85;
-  border-radius:0 100% 0 100%/0 100% 0 100%;
-  background:linear-gradient(135deg, #3c5a34, #24391f);
-  animation:sway 6s ease-in-out infinite;
-  transform-origin:top left;
-}
-@keyframes sway{0%,100%{transform:rotate(-3deg);} 50%{transform:rotate(3deg);}}
-.mat{
-  position:absolute; left:50%; bottom:6%; transform:translateX(-50%);
-  width:46%; aspect-ratio:2.4/1; border-radius:10px;
-  background:repeating-linear-gradient(90deg, #d8c39a, #d8c39a 4px, #c8b088 4px, #c8b088 8px);
-  border:6px solid var(--lantern-dark); box-shadow:0 6px 14px rgba(0,0,0,0.4);
-}
+#join-scene{ background-image:url('assets/bg-join.jpg'); }
+#lobby-scene{ background-image:url('assets/bg-lobby.jpg'); }
+@keyframes glow{0%,100%{text-shadow:0 0 12px rgba(255,221,138,0.7), 0 0 22px rgba(226,84,58,0.4);} 50%{text-shadow:0 0 18px rgba(255,221,138,0.95), 0 0 32px rgba(226,84,58,0.6);}}
 .speaker-btn{
   position:absolute; top:4%; right:4%; width:38px; height:38px; border-radius:50%;
   background:rgba(0,0,0,0.4); border:1px solid rgba(246,236,217,0.3); color:var(--cream);
@@ -103,29 +74,36 @@ label{font-size:12.5px; color:var(--cream-dim); display:block; margin-bottom:6px
 }
 .join-panel h1{font-size:19px; margin:0 0 6px; color:var(--moon);}
 .join-panel p{font-size:12.5px; color:var(--cream-dim); margin:0 0 14px; line-height:1.5;}
-.char-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:10px 0 12px;}
+.char-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px 8px; margin:10px 0 20px;}
 .char-item{
-  aspect-ratio:1/1; border-radius:12px; border:2px solid transparent; cursor:pointer;
-  display:flex; align-items:center; justify-content:center; font-size:20px;
-  background:var(--swatch, #7a5237); position:relative;
+  aspect-ratio:1/1.05; border-radius:12px; border:2px solid transparent; cursor:pointer;
+  position:relative; overflow:hidden;
+  background-color:var(--swatch, #7a5237); background-size:cover; background-position:top center;
+  box-shadow:0 2px 6px rgba(0,0,0,0.35);
 }
-.char-item.selected{border-color:var(--moon); box-shadow:0 0 0 2px rgba(255,221,138,0.3);}
-.char-item .nm{position:absolute; bottom:-16px; left:0; right:0; font-size:9px; text-align:center; color:var(--cream-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.char-item::after{content:''; position:absolute; inset:0; background:linear-gradient(180deg, transparent 55%, rgba(0,0,0,0.75) 100%);}
+.char-item.selected{border-color:var(--moon); box-shadow:0 0 0 2px rgba(255,221,138,0.35), 0 2px 8px rgba(0,0,0,0.4);}
+.char-item .nm{position:absolute; bottom:2px; left:0; right:0; font-size:8.5px; text-align:center; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; z-index:1; padding:0 2px;}
 .remember-row{display:flex; align-items:center; gap:7px; font-size:12px; color:var(--cream-dim); margin:14px 0 4px;}
 .error-text{color:#ff9d8a; font-size:12.5px; margin-top:8px; min-height:16px;}
 .title-glow{
-  position:absolute; left:5%; top:8%; font-size:clamp(28px,5vw,46px); color:var(--moon);
+  position:absolute; left:5%; top:6%; font-size:clamp(28px,5vw,46px); color:#fdf6e3;
   text-shadow:0 0 12px rgba(255,221,138,0.8), 0 0 26px rgba(226,84,58,0.5); z-index:3;
+  animation:glow 4.5s ease-in-out infinite;
 }
 
 /* ===== LOBBY ===== */
 .lobby-wrap{width:100%; max-width:900px;}
 .lobby-info{display:flex; justify-content:space-between; align-items:center; width:100%; padding:10px 4px; font-size:13px; color:var(--cream-dim);}
 .avatar{
-  position:absolute; width:8%; aspect-ratio:1/1.5; transform:translate(-50%,-100%);
+  position:absolute; width:9%; aspect-ratio:1/1.9; transform:translate(-50%,-100%);
   display:flex; flex-direction:column; align-items:center; z-index:6; transition:left .15s linear, top .15s linear;
 }
-.avatar .body{width:100%; height:70%; border-radius:40% 40% 50% 50%; background:var(--swatch,#7a5237); box-shadow:0 3px 6px rgba(0,0,0,0.4);}
+.avatar .body{
+  width:100%; height:88%; border-radius:22% 22% 10% 10%/14% 14% 8% 8%;
+  background-color:var(--swatch,#7a5237); background-size:cover; background-position:top center;
+  box-shadow:0 3px 8px rgba(0,0,0,0.5); border:2px solid rgba(255,255,255,0.18);
+}
 .avatar .name-tag{font-size:9.5px; background:rgba(0,0,0,0.55); padding:2px 6px; border-radius:8px; margin-bottom:2px; white-space:nowrap;}
 .avatar.me .name-tag{background:var(--jade);}
 .avatar .me-arrow{position:absolute; top:-16px; left:50%; transform:translateX(-50%); font-size:14px; color:var(--moon);}
@@ -159,8 +137,8 @@ label{font-size:12.5px; color:var(--cream-dim); display:block; margin-bottom:6px
 @keyframes tick{0%,100%{transform:scale(1);} 50%{transform:scale(1.12);}}
 .board-outer{
   position:relative; width:100%; aspect-ratio:1/1; margin:8px auto;
-  background:radial-gradient(circle at 50% 45%, var(--dirt-1), var(--dirt-2) 60%, var(--dirt-3) 100%);
-  border-radius:16px; box-shadow:inset 0 0 30px rgba(0,0,0,0.5);
+  background-image:url('assets/bg-board.jpg'); background-size:cover; background-position:center;
+  border-radius:16px; box-shadow:inset 0 0 40px rgba(0,0,0,0.55);
 }
 .seatname{
   position:absolute; transform:translate(-50%,-50%); font-size:11.5px; padding:4px 10px; border-radius:12px;
@@ -169,16 +147,17 @@ label{font-size:12.5px; color:var(--cream-dim); display:block; margin-bottom:6px
 .seatname.me{border-color:var(--moon); color:var(--moon);}
 .seatname.turn{background:var(--lantern); color:#fff3e8; border-color:transparent;}
 .cell{
-  position:absolute; width:9.5%; aspect-ratio:1/1; border-radius:50%; transform:translate(-50%,-50%);
-  display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:var(--ink);
-  background:radial-gradient(circle at 35% 30%, #f1e2bd, var(--dan) 60%, var(--dan-dark) 100%);
-  box-shadow:0 3px 5px rgba(0,0,0,0.4); border:2px solid rgba(0,0,0,0.15);
+  position:absolute; width:9.5%; aspect-ratio:1/0.82; border-radius:52% 48% 55% 45%/60% 65% 40% 45%; transform:translate(-50%,-50%);
+  display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#3a2f14;
+  background:radial-gradient(circle at 32% 28%, #ded0a0, #b3a374 55%, #7a6b46 100%);
+  box-shadow:0 3px 5px rgba(0,0,0,0.45), inset 0 -3px 4px rgba(0,0,0,0.25); border:1px solid rgba(0,0,0,0.2);
 }
 .cell.quan{
-  width:14%; border-radius:38% 62% 55% 45%/48% 42% 58% 52%;
-  background:radial-gradient(circle at 35% 30%, #b7bec8, var(--quan) 55%, var(--quan-dark) 100%);
+  width:15%; border-radius:38% 62% 55% 45%/48% 42% 58% 52%;
+  background:radial-gradient(circle at 35% 28%, #c7c8cc, #9a9a9f 55%, #55565c 100%);
+  color:#f3f0e8;
 }
-.cell.quan.dead{background:#2a2015; color:#6b5c46; box-shadow:none;}
+.cell.quan.dead{background:#241f1a; color:#6b5c46; box-shadow:none;}
 .cell.dan.mine.clickable{cursor:pointer; outline:2px solid var(--jade);}
 .cell.dan.mine.clickable:hover{filter:brightness(1.15);}
 .cell.dan.empty{opacity:0.35;}
@@ -209,13 +188,8 @@ label{font-size:12.5px; color:var(--cream-dim); display:block; margin-bottom:6px
 <!-- SCREEN 1: JOIN -->
 <div class="screen active" id="screen-join">
   <div class="scene" id="join-scene">
-    <div class="leaf"></div>
-    <div class="moon"></div>
-    <div class="lantern" style="top:22%; left:8%;"></div>
-    <div class="lantern" style="top:30%; left:14%;"></div>
     <button class="speaker-btn" id="music-btn" title="Bật/tắt nhạc nền">🔇</button>
     <div class="title-glow title-font">oe ăn quan</div>
-    <div class="mat"></div>
   </div>
   <div class="join-panel">
     <h1>Vào sân chơi đêm nay</h1>
@@ -233,11 +207,7 @@ label{font-size:12.5px; color:var(--cream-dim); display:block; margin-bottom:6px
 <!-- SCREEN 2: LOBBY -->
 <div class="screen lobby-wrap" id="screen-lobby">
   <div class="scene" id="lobby-scene">
-    <div class="leaf"></div>
-    <div class="moon"></div>
-    <div class="lantern" style="top:22%; left:8%;"></div>
-    <div class="lantern" style="top:30%; left:14%;"></div>
-    <div class="title-glow title-font" style="font-size:clamp(18px,3vw,26px); top:5%;">dưới trăng rằm</div>
+    <div class="title-glow title-font" style="font-size:clamp(18px,3vw,26px); top:5%; color:#ff9d5c; text-shadow:0 0 14px rgba(255,120,40,0.7);">dưới trăng rằm</div>
     <div id="avatars-layer"></div>
   </div>
   <div class="lobby-info">
@@ -304,16 +274,16 @@ async function storageSet(key, value, shared){
 function uid(){ return 'p_' + Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4); }
 const MY_ID = uid();
 
-/* ===================== NHÂN VẬT (8 nhân vật đặt tên theo dân gian) ===================== */
+/* ===================== NHÂN VẬT (8 bé hoá trang đêm Trung Thu, theo tranh minh hoạ) ===================== */
 const CHARACTERS = [
-  {id:'cuoi', name:'Chú Cuội', color:'#a9895a', emoji:'🌳'},
-  {id:'hangnga', name:'Hằng Nga', color:'#c98fb0', emoji:'🌕'},
-  {id:'ongdia', name:'Ông Địa', color:'#e2b23a', emoji:'😄'},
-  {id:'chute', name:'Chú Tễu', color:'#e2543a', emoji:'🎭'},
-  {id:'cotam', name:'Cô Tấm', color:'#4f8f7b', emoji:'🌸'},
-  {id:'thongoc', name:'Thỏ Ngọc', color:'#cdbfa3', emoji:'🐇'},
-  {id:'ongdo', name:'Ông Đồ', color:'#565d68', emoji:'🖌️'},
-  {id:'belan', name:'Bé Múa Lân', color:'#8f2f2f', emoji:'🦁'}
+  {id:'densao',     name:'Bé Đèn Ông Sao', color:'#e2b23a', img:'assets/chars/densao.jpg'},
+  {id:'hoasen',      name:'Bé Hoa Sen',      color:'#c98fb0', img:'assets/chars/hoasen.jpg'},
+  {id:'phaco',       name:'Bé Phá Cỗ',       color:'#7a9a5a', img:'assets/chars/phaco.jpg'},
+  {id:'thongoc',     name:'Thỏ Ngọc',        color:'#9d8fc9', img:'assets/chars/thongoc.jpg'},
+  {id:'trongcom',    name:'Bé Trống Cơm',    color:'#3d5a80', img:'assets/chars/trongcom.jpg'},
+  {id:'chongchong',  name:'Chú Cuội',        color:'#4f6b3a', img:'assets/chars/chongchong.jpg'},
+  {id:'ongdo',       name:'Ông Đồ',          color:'#7a5237', img:'assets/chars/ongdo.jpg'},
+  {id:'mualaan',     name:'Bé Múa Lân',      color:'#c9432f', img:'assets/chars/mualaan.jpg'}
 ];
 let myCharacter = CHARACTERS[0];
 
@@ -466,7 +436,8 @@ CHARACTERS.forEach((c,i)=>{
   const el = document.createElement('div');
   el.className = 'char-item' + (i===0?' selected':'');
   el.style.setProperty('--swatch', c.color);
-  el.innerHTML = `${c.emoji}<span class="nm">${c.name}</span>`;
+  el.style.backgroundImage = `url('${c.img}')`;
+  el.innerHTML = `<span class="nm">${c.name}</span>`;
   el.addEventListener('click', ()=>{
     document.querySelectorAll('.char-item').forEach(x=>x.classList.remove('selected'));
     el.classList.add('selected');
@@ -534,7 +505,7 @@ function renderAvatars(positions){
     el.style.left = p.x+'%'; el.style.top = p.y+'%';
     const ch = charById(p.character);
     el.style.setProperty('--swatch', ch.color);
-    el.innerHTML = `<div class="name-tag">${p.name||''}</div><div class="body" style="display:flex;align-items:center;justify-content:center;font-size:16px;">${ch.emoji}</div>${isMe?'<div class="me-arrow">▼</div>':''}<div class="bubble" style="display:none;"></div>`;
+    el.innerHTML = `<div class="name-tag">${p.name||''}</div><div class="body" style="background-image:url('${ch.img}');"></div>${isMe?'<div class="me-arrow">▼</div>':''}<div class="bubble" style="display:none;"></div>`;
     layer.appendChild(el);
   });
 }
