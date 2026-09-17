@@ -132,10 +132,11 @@ label{font-size:12.5px; color:var(--cream-dim); display:block; margin-bottom:6px
 /* ===== GAME ===== */
 .game-wrap{max-width:640px; padding:16px 14px 40px;}
 .status-bar{
-  background:rgba(0,0,0,0.4); border:1px solid rgba(255,221,138,0.25); border-radius:10px;
-  padding:8px 12px; font-size:12px; color:var(--cream-dim); margin-bottom:10px; min-height:18px;
+  background:rgba(0,0,0,0.5); border:1px solid rgba(255,221,138,0.35); border-radius:12px;
+  padding:10px 14px; font-size:13.5px; text-align:center; color:var(--cream-dim); margin-bottom:10px; min-height:18px;
+  box-shadow:0 2px 10px rgba(0,0,0,0.3);
 }
-.status-bar b{color:var(--moon);}
+.status-bar b{color:var(--moon); font-size:15px;}
 .timer-pill{text-align:center; font-size:20px; font-weight:800; color:var(--moon); margin-bottom:6px;}
 .timer-pill.low{color:var(--lantern); animation:tick .6s ease-in-out infinite;}
 @keyframes tick{0%,100%{transform:scale(1);} 50%{transform:scale(1.12);}}
@@ -158,6 +159,12 @@ label{font-size:12.5px; color:var(--cream-dim); display:block; margin-bottom:6px
   width:100%; height:92%; object-fit:contain; object-position:bottom center;
   filter:drop-shadow(0 5px 5px rgba(0,0,0,0.45));
 }
+.player-stand .player-score{
+  position:absolute; top:-9px; right:-9px; background:var(--moon); color:var(--ink);
+  font-size:10.5px; font-weight:800; border-radius:50%; width:22px; height:22px;
+  display:flex; align-items:center; justify-content:center; border:2px solid rgba(0,0,0,0.4);
+  box-shadow:0 2px 4px rgba(0,0,0,0.4);
+}
 .hand-marker{
   position:absolute; transform:translate(-50%,-125%); font-size:22px; z-index:12;
   filter:drop-shadow(0 2px 3px rgba(0,0,0,0.6)); pointer-events:none;
@@ -174,6 +181,11 @@ label{font-size:12.5px; color:var(--cream-dim); display:block; margin-bottom:6px
   border-radius:26%;
 }
 .cell.quan{ width:13.5%; }
+.cell-label{
+  position:absolute; transform:translate(-50%,-50%); z-index:8; pointer-events:none;
+  background:rgba(20,14,8,0.72); color:var(--cream); font-size:11px; font-weight:800;
+  border-radius:8px; padding:1px 6px; border:1px solid rgba(255,255,255,0.15); white-space:nowrap;
+}
 .cell.dan.mine.clickable{cursor:pointer; outline:2px solid var(--jade); box-shadow:0 0 0 3px rgba(79,143,123,0.25);}
 .cell.dan.mine.clickable:hover{background:rgba(79,143,123,0.12);}
 .pebble{
@@ -186,31 +198,32 @@ label{font-size:12.5px; color:var(--cream-dim); display:block; margin-bottom:6px
   filter:drop-shadow(0 3px 3px rgba(0,0,0,0.55));
 }
 .cell.quan.dead .rock-icon{ opacity:0.3; filter:grayscale(1) drop-shadow(0 1px 1px rgba(0,0,0,0.3)); }
-.count-badge{
-  position:absolute; right:-8%; bottom:-8%; background:rgba(20,14,8,0.8); color:#fdf6e3;
-  font-size:10px; font-weight:800; border-radius:9px; padding:1px 5px; line-height:1.4;
-  border:1px solid rgba(255,255,255,0.25); white-space:nowrap;
-}
 .dir-picker{
-  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:10;
-  background:rgba(12,13,30,0.92); border:1px solid var(--moon); border-radius:12px; padding:10px 12px;
-  display:flex; gap:8px; align-items:center;
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-135%); z-index:13;
+  background:rgba(12,13,30,0.92); border:1px solid var(--moon); border-radius:22px; padding:6px;
+  display:flex; gap:7px; align-items:center;
 }
-.dir-picker button{font-size:13px; padding:9px 12px;}
+.dir-picker button{
+  font-size:16px; width:36px; height:36px; padding:0; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+}
 .legend{display:flex; justify-content:center; gap:16px; font-size:11.5px; color:var(--cream-dim); margin-top:8px;}
 .legend span{display:inline-flex; align-items:center; gap:5px;}
 .dot{width:9px; height:9px; border-radius:50%;}
 .dot.jade{background:var(--jade);}
 .dot.quan{background:var(--quan);}
-.scoreboard{display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-top:12px;}
-.score-card{background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:8px 14px; text-align:center; min-width:76px;}
-.score-card.me{border-color:var(--moon);}
-.score-card .n{font-size:18px; font-weight:800; color:var(--moon);}
-.score-card .p{font-size:11px; color:var(--cream-dim); margin-top:2px;}
 .end-banner{margin-top:14px; text-align:center; background:rgba(79,143,123,0.15); border:1px solid var(--jade); border-radius:12px; padding:12px; font-size:14px;}
 .rules-toggle{margin-top:14px; font-size:12.5px; color:var(--moon); background:none; border:none; text-decoration:underline; padding:4px;}
 .rules-box{font-size:12.5px; line-height:1.6; color:var(--cream-dim); text-align:left; background:rgba(0,0,0,0.3); border-radius:10px; padding:14px; margin-top:8px; display:none; max-width:900px;}
 .rules-box.open{display:block;}
+.history-toggle{margin-top:6px; font-size:12.5px; color:var(--moon); background:none; border:none; text-decoration:underline; padding:4px;}
+.history-box{
+  font-size:12px; line-height:1.7; color:var(--cream-dim); text-align:left; background:rgba(0,0,0,0.3);
+  border-radius:10px; padding:10px 14px; margin-top:6px; display:none; max-width:900px;
+}
+.history-box.open{display:block;}
+.history-box div{border-bottom:1px solid rgba(255,255,255,0.08); padding:3px 0;}
+.history-box div:last-child{border-bottom:none;}
 </style>
 </head>
 <body>
@@ -288,8 +301,9 @@ label{font-size:12.5px; color:var(--cream-dim); display:block; margin-bottom:6px
     <span><span class="dot jade"></span> sỏi dân của bạn, có thể bốc</span>
     <span><span class="dot quan"></span> sỏi quan</span>
   </div>
-  <div class="scoreboard" id="scoreboard"></div>
   <div class="end-banner" id="end-banner" style="display:none;"></div>
+  <button class="history-toggle" id="history-toggle-btn">Xem lịch sử nước đi</button>
+  <div class="history-box" id="history-box"></div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
@@ -555,6 +569,9 @@ document.getElementById('copy-link-btn').addEventListener('click', async ()=>{
 document.getElementById('rules-toggle-btn').addEventListener('click', ()=>{
   document.getElementById('rules-box').classList.toggle('open');
 });
+document.getElementById('history-toggle-btn').addEventListener('click', ()=>{
+  document.getElementById('history-box').classList.toggle('open');
+});
 
 /* ---- LOBBY: avatar render + movement ---- */
 function charById(id){ return CHARACTERS.find(c=>c.id===id) || CHARACTERS[0]; }
@@ -735,18 +752,13 @@ const PEBBLE_SPOTS = [
   {x:50,y:22},{x:50,y:78},{x:14,y:52}
 ];
 function buildCellContent(cell){
-  if(cell.type==='quan'){
-    let html = `<div class="rock-icon">🪨</div>`;
-    if(cell.stoneAlive && cell.seeds>0) html += `<div class="count-badge">${cell.seeds}</div>`;
-    return html;
-  }
+  if(cell.type==='quan') return `<div class="rock-icon">🪨</div>`;
   const n = Math.min(cell.seeds, PEBBLE_SPOTS.length);
   let html = '';
   for(let i=0;i<n;i++){
     const s = PEBBLE_SPOTS[i];
     html += `<div class="pebble" style="left:${s.x}%;top:${s.y}%;"></div>`;
   }
-  if(cell.seeds > PEBBLE_SPOTS.length) html += `<div class="count-badge">${cell.seeds}</div>`;
   return html;
 }
 function renderBoard(board, anim){
@@ -770,6 +782,16 @@ function renderBoard(board, anim){
     div.innerHTML = buildCellContent(cell);
     if(clickable) div.addEventListener('click', ()=>openDirPicker(idx));
     layer.appendChild(div);
+    // Số lượng sỏi/quan hiện bên ngoài ô (đẩy ra xa tâm bàn), không đè lên hình sỏi bên trong.
+    const showNumber = cell.type==='dan' ? cell.seeds>0 : cell.stoneAlive;
+    if(showNumber){
+      const dx = x-50, dy = y-50, len = Math.hypot(dx,dy) || 1;
+      const lx = x + dx/len*6, ly = y + dy/len*6;
+      const lbl = document.createElement('div');
+      lbl.className = 'cell-label'; lbl.style.left = lx+'%'; lbl.style.top = ly+'%';
+      lbl.textContent = cell.seeds;
+      layer.appendChild(lbl);
+    }
   });
   if(anim && anim.handIdx!=null){
     const {x:hx, y:hy} = cellPercentPos(anim.handIdx, total, mySeat, board.n);
@@ -786,7 +808,7 @@ function renderBoard(board, anim){
     let label = myTeamNames[s] + (s===mySeat?' (bạn)':'');
     if(board.eliminated[s]) label += ' · đã loại';
     const ch = charById(myTeamChars[s]);
-    el.innerHTML = `<div class="name-tag">${label}</div><img class="stand-body" src="${ch.img}" draggable="false">`;
+    el.innerHTML = `<div class="name-tag">${label}</div><img class="stand-body" src="${ch.img}" draggable="false"><div class="player-score">${scores[s]}</div>`;
     seatLayer.appendChild(el);
   }
   const statusBar = document.getElementById('status-bar');
@@ -799,8 +821,10 @@ function renderBoard(board, anim){
     if(board.log && board.log[0]) statusBar.innerHTML += `<br><span style="opacity:0.7;">${board.log[0]}</span>`;
   }
 
-  const score = document.getElementById('scoreboard');
-  score.innerHTML = scores.map((s,i)=>`<div class="score-card${i===mySeat?' me':''}"><div class="n">${s}</div><div class="p">${myTeamNames[i]||''}</div></div>`).join('');
+  if(!anim && board.log){
+    const historyBox = document.getElementById('history-box');
+    historyBox.innerHTML = board.log.map(l=>`<div>${l}</div>`).join('') || '<div>Chưa có nước đi nào.</div>';
+  }
 
   const endBanner = document.getElementById('end-banner');
   if(!anim && board.status==='ended'){
@@ -891,10 +915,12 @@ async function playSteps(baseBoard, steps, actingSeat){
 }
 function openDirPicker(idx){
   pendingCellIdx = idx;
+  const total = myBoard.cells.length, mySeat = myTeamIds.indexOf(MY_ID);
+  const {x, y} = cellPercentPos(idx, total, mySeat, myBoard.n);
   const picker = document.getElementById('dir-picker-layer');
-  picker.innerHTML = `<div class="dir-picker">
-    <button class="btn-ghost" id="dir-left">◀ Trái</button>
-    <button class="btn-primary" id="dir-right">Phải ▶</button>
+  picker.innerHTML = `<div class="dir-picker" style="left:${x}%; top:${y}%;">
+    <button class="btn-ghost" id="dir-left" title="Rải trái">◀</button>
+    <button class="btn-primary" id="dir-right" title="Rải phải">▶</button>
   </div>`;
   document.getElementById('dir-left').addEventListener('click', ()=>confirmDir(-1));
   document.getElementById('dir-right').addEventListener('click', ()=>confirmDir(1));
