@@ -170,20 +170,27 @@ label{font-size:12.5px; color:var(--cream-dim); display:block; margin-bottom:6px
   100%{ transform:translate(-50%,-50%) scale(1); filter:brightness(1); }
 }
 .cell{
-  position:absolute; width:9.5%; aspect-ratio:1/0.82; border-radius:52% 48% 55% 45%/60% 65% 40% 45%; transform:translate(-50%,-50%);
-  display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#3a2f14;
+  position:absolute; width:9%; aspect-ratio:1/1; transform:translate(-50%,-50%);
+  border-radius:26%;
+}
+.cell.quan{ width:13.5%; }
+.cell.dan.mine.clickable{cursor:pointer; outline:2px solid var(--jade); box-shadow:0 0 0 3px rgba(79,143,123,0.25);}
+.cell.dan.mine.clickable:hover{background:rgba(79,143,123,0.12);}
+.pebble{
+  position:absolute; width:32%; aspect-ratio:1/1; border-radius:50%; transform:translate(-50%,-50%);
   background:radial-gradient(circle at 32% 28%, #ded0a0, #b3a374 55%, #7a6b46 100%);
-  box-shadow:0 3px 5px rgba(0,0,0,0.45), inset 0 -3px 4px rgba(0,0,0,0.25); border:1px solid rgba(0,0,0,0.2);
+  box-shadow:0 2px 3px rgba(0,0,0,0.5), inset 0 -1px 2px rgba(0,0,0,0.3);
 }
-.cell.quan{
-  width:15%; border-radius:38% 62% 55% 45%/48% 42% 58% 52%;
-  background:radial-gradient(circle at 35% 28%, #c7c8cc, #9a9a9f 55%, #55565c 100%);
-  color:#f3f0e8;
+.rock-icon{
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-size:180%;
+  filter:drop-shadow(0 3px 3px rgba(0,0,0,0.55));
 }
-.cell.quan.dead{background:#241f1a; color:#6b5c46; box-shadow:none;}
-.cell.dan.mine.clickable{cursor:pointer; outline:2px solid var(--jade);}
-.cell.dan.mine.clickable:hover{filter:brightness(1.15);}
-.cell.dan.empty{opacity:0.35;}
+.cell.quan.dead .rock-icon{ opacity:0.3; filter:grayscale(1) drop-shadow(0 1px 1px rgba(0,0,0,0.3)); }
+.count-badge{
+  position:absolute; right:-8%; bottom:-8%; background:rgba(20,14,8,0.8); color:#fdf6e3;
+  font-size:10px; font-weight:800; border-radius:9px; padding:1px 5px; line-height:1.4;
+  border:1px solid rgba(255,255,255,0.25); white-space:nowrap;
+}
 .dir-picker{
   position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:10;
   background:rgba(12,13,30,0.92); border:1px solid var(--moon); border-radius:12px; padding:10px 12px;
@@ -706,6 +713,26 @@ function seatStandPos(s, mySeat, n){
   const angle = rotAngle(centerIdx, total, mySeat, n) * Math.PI/180;
   return { x: 50 + 44*Math.cos(angle), y: 50 + 44*Math.sin(angle) };
 }
+/* Rải sỏi thật (nhiều viên nhỏ) trực tiếp trong ô, thay vì 1 khối màu ghi số */
+const PEBBLE_SPOTS = [
+  {x:50,y:52},{x:32,y:37},{x:68,y:37},{x:27,y:66},{x:73,y:66},
+  {x:50,y:22},{x:50,y:78},{x:14,y:52}
+];
+function buildCellContent(cell){
+  if(cell.type==='quan'){
+    let html = `<div class="rock-icon">🪨</div>`;
+    if(cell.stoneAlive && cell.seeds>0) html += `<div class="count-badge">${cell.seeds}</div>`;
+    return html;
+  }
+  const n = Math.min(cell.seeds, PEBBLE_SPOTS.length);
+  let html = '';
+  for(let i=0;i<n;i++){
+    const s = PEBBLE_SPOTS[i];
+    html += `<div class="pebble" style="left:${s.x}%;top:${s.y}%;"></div>`;
+  }
+  if(cell.seeds > PEBBLE_SPOTS.length) html += `<div class="count-badge">${cell.seeds}</div>`;
+  return html;
+}
 function renderBoard(board, anim){
   const total = board.cells.length;
   const mySeat = myTeamIds.indexOf(MY_ID);
@@ -721,11 +748,10 @@ function renderBoard(board, anim){
     const mine = cell.type==='dan' && cell.owner===mySeat;
     const clickable = !anim && mine && board.status==='playing' && board.turnSeat===mySeat && !board.eliminated[mySeat] && cell.seeds>0;
     if(mine) cls+=' mine'; if(clickable) cls+=' clickable';
-    if(cell.type==='dan' && cell.seeds===0) cls+=' empty';
     if(cell.type==='quan' && !cell.stoneAlive) cls+=' dead';
     if(anim && anim.capturedIdx===idx) cls+=' captured-flash';
     div.className = cls; div.style.left=x+'%'; div.style.top=y+'%';
-    div.textContent = cell.type==='quan' ? (cell.stoneAlive ? (cell.seeds>0?('Q·'+cell.seeds):'Q') : '·') : cell.seeds;
+    div.innerHTML = buildCellContent(cell);
     if(clickable) div.addEventListener('click', ()=>openDirPicker(idx));
     layer.appendChild(div);
   });
