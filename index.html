@@ -140,16 +140,35 @@ label{font-size:12.5px; color:var(--cream-dim); display:block; margin-bottom:6px
 .timer-pill.low{color:var(--lantern); animation:tick .6s ease-in-out infinite;}
 @keyframes tick{0%,100%{transform:scale(1);} 50%{transform:scale(1.12);}}
 .board-outer{
-  position:relative; width:100%; aspect-ratio:1/1; margin:8px auto;
+  position:relative; width:100%; aspect-ratio:1/1; margin:92px auto 8px;
   background-image:url('assets/bg-board.jpg'); background-size:cover; background-position:center;
   border-radius:16px; box-shadow:inset 0 0 40px rgba(0,0,0,0.55);
 }
-.seatname{
-  position:absolute; transform:translate(-50%,-50%); font-size:11.5px; padding:4px 10px; border-radius:12px;
-  background:rgba(0,0,0,0.45); color:var(--cream-dim); border:1px solid rgba(255,255,255,0.1); white-space:nowrap;
+.player-stand{
+  position:absolute; width:11%; aspect-ratio:1/2; transform:translate(-50%,-100%);
+  display:flex; flex-direction:column; align-items:center; z-index:7; pointer-events:none;
 }
-.seatname.me{border-color:var(--moon); color:var(--moon);}
-.seatname.turn{background:var(--lantern); color:#fff3e8; border-color:transparent;}
+.player-stand .name-tag{
+  font-size:10.5px; padding:3px 9px; border-radius:10px; margin-bottom:4px; white-space:nowrap;
+  background:rgba(0,0,0,0.5); color:var(--cream-dim); border:1px solid rgba(255,255,255,0.12);
+}
+.player-stand.me .name-tag{border-color:var(--moon); color:var(--moon);}
+.player-stand.turn .name-tag{background:var(--lantern); color:#fff3e8; border-color:transparent;}
+.player-stand .stand-body{
+  width:100%; height:92%; object-fit:contain; object-position:bottom center;
+  filter:drop-shadow(0 5px 5px rgba(0,0,0,0.45));
+}
+.hand-marker{
+  position:absolute; transform:translate(-50%,-125%); font-size:22px; z-index:12;
+  filter:drop-shadow(0 2px 3px rgba(0,0,0,0.6)); pointer-events:none;
+  animation:handBob .5s ease-in-out infinite alternate;
+}
+@keyframes handBob{ from{transform:translate(-50%,-122%) rotate(-10deg);} to{transform:translate(-50%,-130%) rotate(10deg);} }
+.cell.captured-flash{ animation:captureFlash .3s ease-out; }
+@keyframes captureFlash{
+  0%{ transform:translate(-50%,-50%) scale(1.4); filter:brightness(1.9); }
+  100%{ transform:translate(-50%,-50%) scale(1); filter:brightness(1); }
+}
 .cell{
   position:absolute; width:9.5%; aspect-ratio:1/0.82; border-radius:52% 48% 55% 45%/60% 65% 40% 45%; transform:translate(-50%,-50%);
   display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#3a2f14;
@@ -438,7 +457,8 @@ function formTeams(players){
 }
 
 /* ===================== APP STATE ===================== */
-let myTeamIndex=-1, myTeamIds=[], myTeamNames=[], myBoard=null, room=null;
+let myTeamIndex=-1, myTeamIds=[], myTeamNames=[], myTeamChars=[], myBoard=null, room=null;
+let animating=false, lastAnimatedMoveId=null, lastSeenMoveId=null;
 let lobbyPollTimer=null, gamePollTimer=null, posPollTimer=null, chatPollTimer=null;
 let myPos = {x:50, y:70};
 let lastChatCount = 0;
@@ -638,6 +658,8 @@ function enterGame(r){
   }
   myTeamIds = r.teams[myTeamIndex];
   myTeamNames = myTeamIds.map(id => (r.players.find(p=>p.id===id)||{}).name || '???');
+  myTeamChars = myTeamIds.map(id => (r.players.find(p=>p.id===id)||{}).character || CHARACTERS[0].id);
+  animating=false; lastAnimatedMoveId=null; lastSeenMoveId=null; myBoard=null;
   showScreen('screen-game');
   gameTick();
   gamePollTimer = setInterval(gameTick, 1300);
@@ -647,58 +669,155 @@ function rotAngle(idx, total, mySeat, n){
   const perSeat = total/n;
   const raw = (idx/total)*360 - 90;
   const myCenterRaw = ((mySeat*perSeat + perSeat/2)/total)*360 - 90;
-  const offset = 90 - myCenterRaw; // đặt ghế của mình cố định ở phía dưới (gần người xem)
+  const offset = 0 - myCenterRaw; // đặt ghế của mình cố định ở góc phải, 2 người còn lại ở 2 cạnh kia
   return raw + offset;
 }
-function renderBoard(board){
+function renderBoard(board, anim){
   const total = board.cells.length;
   const mySeat = myTeamIds.indexOf(MY_ID);
   const R = 40;
+  const cells = anim && anim.cells ? anim.cells : board.cells;
+  const scores = anim && anim.scores ? anim.scores : board.scores;
   const layer = document.getElementById('cells-layer');
   const seatLayer = document.getElementById('seatnames-layer');
   layer.innerHTML=''; seatLayer.innerHTML='';
-  board.cells.forEach((cell, idx)=>{
+  cells.forEach((cell, idx)=>{
     const angle = rotAngle(idx, total, mySeat, board.n) * Math.PI/180;
     const x = 50 + R*Math.cos(angle), y = 50 + R*Math.sin(angle);
     const div = document.createElement('div');
     let cls = 'cell ' + cell.type;
     const mine = cell.type==='dan' && cell.owner===mySeat;
-    const clickable = mine && board.status==='playing' && board.turnSeat===mySeat && !board.eliminated[mySeat] && cell.seeds>0;
+    const clickable = !anim && mine && board.status==='playing' && board.turnSeat===mySeat && !board.eliminated[mySeat] && cell.seeds>0;
     if(mine) cls+=' mine'; if(clickable) cls+=' clickable';
     if(cell.type==='dan' && cell.seeds===0) cls+=' empty';
     if(cell.type==='quan' && !cell.stoneAlive) cls+=' dead';
+    if(anim && anim.capturedIdx===idx) cls+=' captured-flash';
     div.className = cls; div.style.left=x+'%'; div.style.top=y+'%';
     div.textContent = cell.type==='quan' ? (cell.stoneAlive ? (cell.seeds>0?('Q·'+cell.seeds):'Q') : '·') : cell.seeds;
     if(clickable) div.addEventListener('click', ()=>openDirPicker(idx));
     layer.appendChild(div);
   });
+  if(anim && anim.handIdx!=null){
+    const angle = rotAngle(anim.handIdx, total, mySeat, board.n) * Math.PI/180;
+    const hx = 50 + R*Math.cos(angle), hy = 50 + R*Math.sin(angle);
+    const hand = document.createElement('div');
+    hand.className = 'hand-marker'; hand.textContent = '✋';
+    hand.style.left = hx+'%'; hand.style.top = hy+'%';
+    layer.appendChild(hand);
+  }
   const perSeat = total/board.n;
   for(let s=0;s<board.n;s++){
     const centerIdx = s*perSeat + perSeat/2;
     const angle = rotAngle(centerIdx, total, mySeat, board.n) * Math.PI/180;
-    const x = 50 + (R+9)*Math.cos(angle), y = 50 + (R+9)*Math.sin(angle);
+    const x = 50 + 44*Math.cos(angle), y = 50 + 44*Math.sin(angle);
     const el = document.createElement('div');
-    let c='seatname'; if(s===mySeat) c+=' me'; if(board.turnSeat===s && board.status==='playing' && !board.eliminated[s]) c+=' turn';
+    let c='player-stand'; if(s===mySeat) c+=' me'; if(!anim && board.turnSeat===s && board.status==='playing' && !board.eliminated[s]) c+=' turn';
     el.className=c; el.style.left=x+'%'; el.style.top=y+'%';
     let label = myTeamNames[s] + (s===mySeat?' (bạn)':'');
     if(board.eliminated[s]) label += ' · đã loại';
-    el.textContent = label;
+    const ch = charById(myTeamChars[s]);
+    el.innerHTML = `<div class="name-tag">${label}</div><img class="stand-body" src="${ch.img}" draggable="false">`;
     seatLayer.appendChild(el);
   }
   const statusBar = document.getElementById('status-bar');
-  statusBar.innerHTML = board.status==='playing'
-    ? (board.eliminated[mySeat] ? 'Bạn đã bị loại khỏi bàn này.' : (board.turnSeat===mySeat ? '<b>Đến lượt bạn</b> — chọn 1 sỏi dân của bạn.' : `Đang chờ <b>${myTeamNames[board.turnSeat]}</b> đi...`))
-    : 'Ván đã kết thúc.';
-  if(board.log && board.log[0]) statusBar.innerHTML += `<br><span style="opacity:0.7;">${board.log[0]}</span>`;
+  if(anim && anim.statusText){
+    statusBar.innerHTML = anim.statusText;
+  } else {
+    statusBar.innerHTML = board.status==='playing'
+      ? (board.eliminated[mySeat] ? 'Bạn đã bị loại khỏi bàn này.' : (board.turnSeat===mySeat ? '<b>Đến lượt bạn</b> — chọn 1 sỏi dân của bạn.' : `Đang chờ <b>${myTeamNames[board.turnSeat]}</b> đi...`))
+      : 'Ván đã kết thúc.';
+    if(board.log && board.log[0]) statusBar.innerHTML += `<br><span style="opacity:0.7;">${board.log[0]}</span>`;
+  }
 
   const score = document.getElementById('scoreboard');
-  score.innerHTML = board.scores.map((s,i)=>`<div class="score-card${i===mySeat?' me':''}"><div class="n">${s}</div><div class="p">${myTeamNames[i]||''}</div></div>`).join('');
+  score.innerHTML = scores.map((s,i)=>`<div class="score-card${i===mySeat?' me':''}"><div class="n">${s}</div><div class="p">${myTeamNames[i]||''}</div></div>`).join('');
 
   const endBanner = document.getElementById('end-banner');
-  if(board.status==='ended'){
+  if(!anim && board.status==='ended'){
     endBanner.style.display='block';
     endBanner.textContent = (board.winners.length>1?'Hoà giữa: ':'Thắng bàn này: ') + board.winners.map(i=>myTeamNames[i]).join(', ');
-  } else { endBanner.style.display='none'; }
+  } else if(!anim){ endBanner.style.display='none'; }
+}
+
+/* ---- Rải sỏi: mô phỏng từng bước để phát animation bàn tay + âm thanh ---- */
+function computeMoveSteps(cellsInput, startIdx, actingSeat, dir, firstQuanCapturedInput){
+  const cells = cellsInput.map(c=>({...c}));
+  const steps = [];
+  let firstQuanCaptured = firstQuanCapturedInput;
+  function pickAndSow(fromIdx){
+    let seeds = cells[fromIdx].seeds;
+    cells[fromIdx].seeds = 0;
+    steps.push({type:'pick', idx:fromIdx});
+    let idx = fromIdx;
+    while(seeds>0){
+      idx = stepIdx(cells, idx, dir);
+      cells[idx].seeds += 1;
+      steps.push({type:'drop', idx, seedsAfter:cells[idx].seeds});
+      seeds--;
+    }
+    return idx;
+  }
+  let L = pickAndSow(startIdx), guard=0;
+  while(true){
+    guard++; if(guard>3000) break;
+    const next1 = stepIdx(cells, L, dir);
+    if(cells[next1].type==='dan' && cells[next1].seeds>0){ L = pickAndSow(next1); continue; }
+    if(cells[next1].type==='quan' && isOccupied(cells[next1])) break;
+    let gap = next1;
+    while(true){
+      const candidate = stepIdx(cells, gap, dir);
+      if(!isOccupied(cells[candidate])) break;
+      if(cells[candidate].type==='quan' && !firstQuanCaptured && cells[candidate].seeds < QUAN_GIA_THRESHOLD) break;
+      const wasQuan = cells[candidate].type==='quan';
+      const points = cells[candidate].seeds*DAN_VALUE + (wasQuan?QUAN_VALUE:0);
+      if(wasQuan) firstQuanCaptured = true;
+      cells[candidate].seeds = 0;
+      steps.push({type:'capture', idx:candidate, points, isQuan:wasQuan});
+      const nextGap = stepIdx(cells, candidate, dir);
+      if(!isOccupied(cells[nextGap])){ gap = nextGap; } else break;
+    }
+    break;
+  }
+  return steps;
+}
+function sleep(ms){ return new Promise(res=>setTimeout(res, ms)); }
+let sharedAudioCtx=null;
+function beep(freq, dur, type, vol){
+  try{
+    sharedAudioCtx = sharedAudioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    if(sharedAudioCtx.state==='suspended') sharedAudioCtx.resume();
+    const o = sharedAudioCtx.createOscillator(), g = sharedAudioCtx.createGain();
+    o.type = type; o.frequency.value = freq; g.gain.value = vol;
+    o.connect(g); g.connect(sharedAudioCtx.destination);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, sharedAudioCtx.currentTime+dur);
+    o.stop(sharedAudioCtx.currentTime+dur);
+  }catch(e){}
+}
+async function playSteps(baseBoard, steps, actingSeat){
+  const cells = baseBoard.cells.map(c=>({...c}));
+  const scores = [...baseBoard.scores];
+  const movingName = myTeamNames[actingSeat] || '???';
+  for(const step of steps){
+    if(step.type==='pick'){
+      renderBoard(baseBoard, {cells, scores, handIdx:step.idx, statusText:`<b>${movingName}</b> đang bốc sỏi...`});
+      beep(430,0.08,'sine',0.13);
+      await sleep(230);
+    } else if(step.type==='drop'){
+      cells[step.idx].seeds = step.seedsAfter;
+      renderBoard(baseBoard, {cells, scores, handIdx:step.idx, statusText:`<b>${movingName}</b> đang rải sỏi...`});
+      beep(640,0.05,'sine',0.12);
+      await sleep(150);
+    } else if(step.type==='capture'){
+      cells[step.idx].seeds = 0;
+      if(step.isQuan) cells[step.idx].stoneAlive = false;
+      scores[actingSeat] += step.points;
+      renderBoard(baseBoard, {cells, scores, handIdx:step.idx, capturedIdx:step.idx, statusText:`<b>${movingName}</b> ăn ${step.points} điểm!`});
+      beep(900,0.16,'triangle',0.18);
+      await sleep(280);
+    }
+  }
+  await sleep(150);
 }
 function openDirPicker(idx){
   pendingCellIdx = idx;
@@ -713,15 +832,25 @@ function openDirPicker(idx){
 function closeDirPicker(){ document.getElementById('dir-picker-layer').innerHTML=''; pendingCellIdx=null; }
 let clickLock=false;
 async function confirmDir(dir){
-  if(pendingCellIdx===null || clickLock) return;
+  if(pendingCellIdx===null || clickLock || animating) return;
   const idx = pendingCellIdx; closeDirPicker();
   clickLock = true;
   try{
-    const board = await storageGet('board-team-'+myTeamIndex, true);
-    if(!board){ clickLock=false; return; }
+    const boardBefore = await storageGet('board-team-'+myTeamIndex);
+    if(!boardBefore) return;
     const mySeat = myTeamIds.indexOf(MY_ID);
-    const ok = applyMove(board, idx, mySeat, dir);
-    if(ok){ await storageSet('board-team-'+myTeamIndex, board, true); myBoard=board; renderBoard(board); }
+    const boardAfter = JSON.parse(JSON.stringify(boardBefore));
+    const ok = applyMove(boardAfter, idx, mySeat, dir);
+    if(!ok) return;
+    const moveId = uid();
+    boardAfter.lastMove = {cellIdx:idx, dir, seat:mySeat, moveId};
+    lastAnimatedMoveId = moveId; lastSeenMoveId = moveId;
+    animating = true;
+    const steps = computeMoveSteps(boardBefore.cells, idx, mySeat, dir, boardBefore.firstQuanCaptured);
+    await playSteps(boardBefore, steps, mySeat);
+    animating = false;
+    myBoard = boardAfter; renderBoard(boardAfter);
+    await storageSet('board-team-'+myTeamIndex, boardAfter);
   } finally { clickLock=false; }
 }
 
@@ -749,8 +878,21 @@ async function maybeHandleTimeout(board){
   } finally { timeoutLock=false; }
 }
 async function gameTick(){
-  const board = await storageGet('board-team-'+myTeamIndex, true);
-  if(board){ myBoard=board; renderBoard(board); await maybeHandleTimeout(board); }
+  if(animating) return;
+  const board = await storageGet('board-team-'+myTeamIndex);
+  if(!board) return;
+  const incomingMoveId = board.lastMove ? board.lastMove.moveId : null;
+  const isNew = incomingMoveId && incomingMoveId !== lastSeenMoveId;
+  if(myBoard && isNew && incomingMoveId !== lastAnimatedMoveId){
+    animating = true;
+    try{
+      const steps = computeMoveSteps(myBoard.cells, board.lastMove.cellIdx, board.lastMove.seat, board.lastMove.dir, myBoard.firstQuanCaptured);
+      await playSteps(myBoard, steps, board.lastMove.seat);
+    } finally { animating = false; }
+  }
+  lastSeenMoveId = incomingMoveId;
+  myBoard = board; renderBoard(board);
+  await maybeHandleTimeout(board);
 }
 setInterval(()=>{
   const el = document.getElementById('turn-timer');
