@@ -672,18 +672,50 @@ function rotAngle(idx, total, mySeat, n){
   const offset = 0 - myCenterRaw; // đặt ghế của mình cố định ở góc phải, 2 người còn lại ở 2 cạnh kia
   return raw + offset;
 }
+/* Toạ độ % (đo tay từ assets/bg-board.jpg) của các ô đã vẽ sẵn trên nền —
+   chỉ áp dụng khi n=3 (bàn 3 góc chuẩn); n khác dùng công thức vòng tròn cũ. */
+const BOARD_SLOTS_N3 = {
+  quan: [ {x:81.62,y:42.07}, {x:51.55,y:78.46}, {x:19.88,y:42.12} ], // góc bắt đầu của cạnh 0,1,2
+  dan: [
+    [{x:77.38,y:47.21},{x:73.20,y:52.26},{x:69.71,y:56.48},{x:66.11,y:60.84},{x:62.08,y:65.72},{x:58.17,y:70.45}],
+    [{x:44.59,y:70.46},{x:40.47,y:65.75},{x:36.23,y:60.87},{x:32.42,y:56.51},{x:28.75,y:52.29},{x:24.35,y:47.25}],
+    [{x:31.08,y:41.32},{x:38.69,y:41.32},{x:46.62,y:41.32},{x:54.56,y:41.32},{x:62.54,y:41.32},{x:70.42,y:41.32}],
+  ]
+};
+function cellPercentPos(idx, total, mySeat, n){
+  if(n===3){
+    const absSeat = Math.floor(idx/7), posInBlock = idx%7;
+    const side = (absSeat - mySeat + n) % n;
+    return posInBlock===0 ? BOARD_SLOTS_N3.quan[side] : BOARD_SLOTS_N3.dan[side][posInBlock-1];
+  }
+  const R = 40;
+  const angle = rotAngle(idx, total, mySeat, n) * Math.PI/180;
+  return { x: 50 + R*Math.cos(angle), y: 50 + R*Math.sin(angle) };
+}
+function seatStandPos(s, mySeat, n){
+  if(n===3){
+    const side = (s - mySeat + n) % n;
+    const pts = BOARD_SLOTS_N3.dan[side];
+    const avgX = pts.reduce((a,p)=>a+p.x,0)/pts.length, avgY = pts.reduce((a,p)=>a+p.y,0)/pts.length;
+    const dx = avgX-50, dy = avgY-50, len = Math.hypot(dx,dy) || 1;
+    const pushed = len + 12;
+    return { x: 50 + dx/len*pushed, y: 50 + dy/len*pushed };
+  }
+  const total = n*7, perSeat = total/n;
+  const centerIdx = s*perSeat + perSeat/2;
+  const angle = rotAngle(centerIdx, total, mySeat, n) * Math.PI/180;
+  return { x: 50 + 44*Math.cos(angle), y: 50 + 44*Math.sin(angle) };
+}
 function renderBoard(board, anim){
   const total = board.cells.length;
   const mySeat = myTeamIds.indexOf(MY_ID);
-  const R = 40;
   const cells = anim && anim.cells ? anim.cells : board.cells;
   const scores = anim && anim.scores ? anim.scores : board.scores;
   const layer = document.getElementById('cells-layer');
   const seatLayer = document.getElementById('seatnames-layer');
   layer.innerHTML=''; seatLayer.innerHTML='';
   cells.forEach((cell, idx)=>{
-    const angle = rotAngle(idx, total, mySeat, board.n) * Math.PI/180;
-    const x = 50 + R*Math.cos(angle), y = 50 + R*Math.sin(angle);
+    const {x, y} = cellPercentPos(idx, total, mySeat, board.n);
     const div = document.createElement('div');
     let cls = 'cell ' + cell.type;
     const mine = cell.type==='dan' && cell.owner===mySeat;
@@ -698,18 +730,14 @@ function renderBoard(board, anim){
     layer.appendChild(div);
   });
   if(anim && anim.handIdx!=null){
-    const angle = rotAngle(anim.handIdx, total, mySeat, board.n) * Math.PI/180;
-    const hx = 50 + R*Math.cos(angle), hy = 50 + R*Math.sin(angle);
+    const {x:hx, y:hy} = cellPercentPos(anim.handIdx, total, mySeat, board.n);
     const hand = document.createElement('div');
     hand.className = 'hand-marker'; hand.textContent = '✋';
     hand.style.left = hx+'%'; hand.style.top = hy+'%';
     layer.appendChild(hand);
   }
-  const perSeat = total/board.n;
   for(let s=0;s<board.n;s++){
-    const centerIdx = s*perSeat + perSeat/2;
-    const angle = rotAngle(centerIdx, total, mySeat, board.n) * Math.PI/180;
-    const x = 50 + 44*Math.cos(angle), y = 50 + 44*Math.sin(angle);
+    const {x, y} = seatStandPos(s, mySeat, board.n);
     const el = document.createElement('div');
     let c='player-stand'; if(s===mySeat) c+=' me'; if(!anim && board.turnSeat===s && board.status==='playing' && !board.eliminated[s]) c+=' turn';
     el.className=c; el.style.left=x+'%'; el.style.top=y+'%';
