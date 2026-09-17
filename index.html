@@ -215,6 +215,9 @@ label{font-size:12.5px; color:var(--cream-dim); display:block; margin-bottom:6px
 </head>
 <body>
 
+<!-- Nhạc nền: trình phát YouTube ẩn, phát trực tiếp từ YouTube (không tải/lưu file nhạc) -->
+<div id="yt-audio-player" style="position:fixed; width:0; height:0; overflow:hidden;"></div>
+
 <!-- SCREEN 1: JOIN -->
 <div class="screen active" id="screen-join">
   <div class="scene" id="join-scene">
@@ -291,7 +294,19 @@ label{font-size:12.5px; color:var(--cream-dim); display:block; margin-bottom:6px
 
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+<script src="https://www.youtube.com/iframe_api"></script>
 <script>
+/* ===================== NHẠC NỀN (YouTube, phát trực tiếp) ===================== */
+const BG_MUSIC_VIDEO_ID = 'RtusyQRZIQo';
+let ytPlayer = null, ytReady = false, musicWantsPlay = false;
+function onYouTubeIframeAPIReady(){
+  ytPlayer = new YT.Player('yt-audio-player', {
+    height:'0', width:'0', videoId: BG_MUSIC_VIDEO_ID,
+    playerVars:{ autoplay:0, controls:0, loop:1, playlist: BG_MUSIC_VIDEO_ID },
+    events:{ onReady: ()=>{ ytReady = true; ytPlayer.setVolume(45); if(musicWantsPlay) ytPlayer.playVideo(); } }
+  });
+}
+
 /* ===================== STORAGE HELPERS (Firebase Realtime Database) ===================== */
 const firebaseConfig = {
   apiKey: "AIzaSyBJTw-s2bE-PwLHQjsM4eUf2SZEPwbjMm4",
@@ -496,7 +511,8 @@ document.getElementById('music-btn').addEventListener('click', (e)=>{
   const btn = e.currentTarget;
   const on = btn.textContent === '🔇';
   btn.textContent = on ? '🔊' : '🔇';
-  // Ghi chú: chưa gắn file nhạc thật, đây là nút bật/tắt placeholder cho bản sườn.
+  musicWantsPlay = on;
+  if(ytReady){ on ? ytPlayer.playVideo() : ytPlayer.pauseVideo(); }
 });
 
 /* ---- JOIN ---- */
