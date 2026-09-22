@@ -501,7 +501,7 @@ function formTeams(players){
 /* ===================== APP STATE ===================== */
 let myTeamIndex=-1, myTeamIds=[], myTeamNames=[], myTeamChars=[], myBoard=null, room=null;
 let animating=false, lastAnimatedMoveId=null, lastSeenMoveId=null;
-let lobbyPollTimer=null, gamePollTimer=null, posPollTimer=null, chatPollTimer=null;
+let lobbyListenersAttached=false, gamePollTimer=null, posPollTimer=null, chatPollTimer=null;
 let myPos = {x:50, y:70};
 let lastChatCount = 0;
 let pendingCellIdx = null;
@@ -581,18 +581,31 @@ document.getElementById('history-toggle-btn').addEventListener('click', ()=>{
 
 /* ---- LOBBY: avatar render + movement ---- */
 function charById(id){ return CHARACTERS.find(c=>c.id===id) || CHARACTERS[0]; }
+// Render kiểu diff: chỉ tạo DOM 1 lần/người, các lần sau chỉ cập nhật vị trí —
+// tránh xoá-dựng-lại toàn bộ avatar mỗi lần đồng bộ (giật lag khi đông người, vd 70 người/sân).
+let avatarEls = {};
 function renderAvatars(positions){
   const layer = document.getElementById('avatars-layer');
-  layer.innerHTML = '';
+  const seen = new Set();
   Object.entries(positions).forEach(([pid, p])=>{
-    const isMe = pid===MY_ID;
-    const el = document.createElement('div');
-    el.className = 'avatar' + (isMe?' me':'');
+    seen.add(pid);
+    let el = avatarEls[pid];
+    if(!el){
+      const isMe = pid===MY_ID;
+      el = document.createElement('div');
+      el.className = 'avatar' + (isMe?' me':'');
+      const ch = charById(p.character);
+      el.style.setProperty('--swatch', ch.color);
+      el.innerHTML = `<div class="name-tag"></div><div class="shadow"></div><img class="body" src="${ch.img}" draggable="false">${isMe?'<div class="me-arrow">▼</div>':''}<div class="bubble" style="display:none;"></div>`;
+      layer.appendChild(el);
+      avatarEls[pid] = el;
+    }
     el.style.left = p.x+'%'; el.style.top = p.y+'%';
-    const ch = charById(p.character);
-    el.style.setProperty('--swatch', ch.color);
-    el.innerHTML = `<div class="name-tag">${p.name||''}</div><div class="shadow"></div><img class="body" src="${ch.img}" draggable="false">${isMe?'<div class="me-arrow">▼</div>':''}<div class="bubble" style="display:none;"></div>`;
-    layer.appendChild(el);
+    const nameTag = el.querySelector('.name-tag');
+    if(nameTag.textContent !== (p.name||'')) nameTag.textContent = p.name||'';
+  });
+  Object.keys(avatarEls).forEach(pid=>{
+    if(!seen.has(pid)){ avatarEls[pid].remove(); delete avatarEls[pid]; }
   });
 }
 let keysHeld = {};
@@ -680,19 +693,39 @@ document.getElementById('start-btn').addEventListener('click', async ()=>{
   await storageSet('room', {phase:'playing', teams:teamIds, hostId:MY_ID, createdAt: Date.now()});
   for(let i=0;i<teams.length;i++){ await storageSet('board-team-'+i, generateBoard(teams[i])); }
 });
-async function lobbyTick(){
-  const meta = await storageGet('room');
-  const players = await getPlayers();
-  room = { phase: meta?.phase || 'lobby', teams: meta?.teams || [], players };
+/* Dùng Firebase real-time listener (on('value')) thay vì poll get() lặp lại mỗi 1.2s —
+   Firebase tự đẩy đúng phần dữ liệu thay đổi qua kết nối sẵn có, nhẹ và mượt hơn hẳn
+   khi đông người (vd 70 người trong sân cùng lúc) so với việc mỗi client tự tải lại
+   toàn bộ room/players/positions/chat theo chu kỳ. */
+let latestRoomMeta = null, latestPlayersObj = null;
+function handleLobbyUpdate(){
+  if(latestRoomMeta===null || latestPlayersObj===null) return;
+  const players = Object.values(latestPlayersObj).sort((a,b)=>a.joinedAt-b.joinedAt);
+  room = { phase: latestRoomMeta.phase || 'lobby', teams: latestRoomMeta.teams || [], players };
   if(room.phase==='playing'){ stopLobbyPolling(); enterGame(room); return; }
-  renderLobby(room, meta?.hostId);
-  const positions = await storageGet('positions');
-  if(positions) renderAvatars(positions);
-  const chatObj = await storageGet('chat');
-  if(chatObj) renderChat(Object.values(chatObj).sort((a,b)=>a.ts-b.ts));
+  renderLobby(room, latestRoomMeta.hostId);
 }
-function startLobbyPolling(){ stopLobbyPolling(); lobbyTick(); lobbyPollTimer=setInterval(lobbyTick, 1200); }
-function stopLobbyPolling(){ if(lobbyPollTimer){ clearInterval(lobbyPollTimer); lobbyPollTimer=null; } }
+function onRoomSnapshot(snap){ latestRoomMeta = snap.val() || {}; handleLobbyUpdate(); }
+function onPlayersSnapshot(snap){ latestPlayersObj = snap.val() || {}; handleLobbyUpdate(); }
+function onPositionsSnapshot(snap){ const positions = snap.val(); if(positions) renderAvatars(positions); }
+function onChatSnapshot(snap){ const chatObj = snap.val(); if(chatObj) renderChat(Object.values(chatObj).sort((a,b)=>a.ts-b.ts)); }
+function startLobbyPolling(){
+  if(lobbyListenersAttached) return;
+  lobbyListenersAttached = true;
+  latestRoomMeta = null; latestPlayersObj = null;
+  db.ref('oe-an-quan/room').on('value', onRoomSnapshot);
+  db.ref('oe-an-quan/players').on('value', onPlayersSnapshot);
+  db.ref('oe-an-quan/positions').on('value', onPositionsSnapshot);
+  db.ref('oe-an-quan/chat').on('value', onChatSnapshot);
+}
+function stopLobbyPolling(){
+  if(!lobbyListenersAttached) return;
+  lobbyListenersAttached = false;
+  db.ref('oe-an-quan/room').off('value', onRoomSnapshot);
+  db.ref('oe-an-quan/players').off('value', onPlayersSnapshot);
+  db.ref('oe-an-quan/positions').off('value', onPositionsSnapshot);
+  db.ref('oe-an-quan/chat').off('value', onChatSnapshot);
+}
 
 /* ---- GAME ---- */
 function findMyTeam(r){ for(let i=0;i<r.teams.length;i++) if(r.teams[i].includes(MY_ID)) return i; return -1; }
