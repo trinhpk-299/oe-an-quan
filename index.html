@@ -57,7 +57,10 @@ label{font-size:12.5px; color:var(--cream-dim); display:block; margin-bottom:6px
   background-color:#10162c;
   box-shadow:inset 0 -40px 60px -20px rgba(0,0,0,0.55);
 }
-#join-scene{ background-image:url('assets/bg-join.jpg'); }
+#join-scene{
+  background-image:url('assets/bg-join.jpg');
+  width:100vw; max-width:none; height:100vh; aspect-ratio:auto; margin:0; border-radius:0;
+}
 #lobby-scene{ background-image:url('assets/bg-lobby.jpg'); }
 @keyframes glow{0%,100%{text-shadow:0 0 12px rgba(255,221,138,0.7), 0 0 22px rgba(226,84,58,0.4);} 50%{text-shadow:0 0 18px rgba(255,221,138,0.95), 0 0 32px rgba(226,84,58,0.6);}}
 .speaker-btn{
