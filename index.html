@@ -67,9 +67,10 @@ label{font-size:12.5px; color:var(--cream-dim); display:block; margin-bottom:6px
 }
 @keyframes glow{0%,100%{text-shadow:0 0 12px rgba(255,221,138,0.7), 0 0 22px rgba(226,84,58,0.4);} 50%{text-shadow:0 0 18px rgba(255,221,138,0.95), 0 0 32px rgba(226,84,58,0.6);}}
 .speaker-btn{
-  position:absolute; top:4%; right:4%; width:38px; height:38px; border-radius:50%;
-  background:rgba(0,0,0,0.4); border:1px solid rgba(246,236,217,0.3); color:var(--cream);
-  font-size:16px; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:5;
+  position:fixed; top:14px; right:14px; width:38px; height:38px; border-radius:50%;
+  background:rgba(0,0,0,0.45); border:1px solid rgba(246,236,217,0.3); color:var(--cream);
+  font-size:16px; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:50;
+  box-shadow:0 2px 6px rgba(0,0,0,0.4);
 }
 
 /* ===== JOIN PANEL (đè lên scene) ===== */
@@ -236,11 +237,12 @@ label{font-size:12.5px; color:var(--cream-dim); display:block; margin-bottom:6px
 
 <!-- Nhạc nền: trình phát YouTube ẩn, phát trực tiếp từ YouTube (không tải/lưu file nhạc) -->
 <div id="yt-audio-player" style="position:fixed; width:0; height:0; overflow:hidden;"></div>
+<!-- Nút bật/tắt nhạc: đặt cố định ngoài mọi màn hình nên luôn hiện xuyên suốt vào sân / sảnh chờ / ván chơi -->
+<button class="speaker-btn" id="music-btn" title="Bật/tắt nhạc nền">🔇</button>
 
 <!-- SCREEN 1: JOIN -->
 <div class="screen active" id="screen-join">
   <div class="scene" id="join-scene">
-    <button class="speaker-btn" id="music-btn" title="Bật/tắt nhạc nền">🔇</button>
     <div class="title-glow title-font">oe ăn quan</div>
   </div>
   <div class="join-panel">
